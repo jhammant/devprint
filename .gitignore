@@ -3,3 +3,9 @@ dist/
 .vite/
 .env
 .DS_Store
+
+# SST + AWS
+.sst/
+.open-next/
+cdk.out/
+*.tsbuildinfo
