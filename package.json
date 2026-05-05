@@ -1,0 +1,19 @@
+{
+  "name": "devprint",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GitHub user/repo fingerprints for humans, plus agent-ready repo context packs.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vitejs/plugin-legacy": "latest",
+    "vite": "latest",
+    "typescript": "latest"
+  },
+  "devDependencies": {}
+}
