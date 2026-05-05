@@ -8,12 +8,16 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@vitejs/plugin-legacy": "latest",
     "vite": "latest",
     "typescript": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  }
 }
