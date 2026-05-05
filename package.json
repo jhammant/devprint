@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-legacy": "latest",
+    "html-to-image": "^1.11.13",
     "typescript": "latest",
     "vite": "latest"
   },

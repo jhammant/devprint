@@ -1,4 +1,5 @@
 import './styles.css';
+import { toPng } from 'html-to-image';
 import {
   archetype,
   battleStats,
@@ -47,7 +48,7 @@ app.innerHTML = `
     <div><div class="eyebrow" id="eyebrow"></div><h1 class="h1" id="heroTitle"></h1><p class="lead" id="heroLead"></p><form class="search" id="form"><input id="target" placeholder="github.com/jhammant or jhammant/factcheck" autocomplete="off" /><button id="go">Generate</button></form><div class="examples"><span class="chip" data-target="jhammant">jhammant</span><span class="chip" data-target="jhammant/factcheck">jhammant/factcheck</span><span class="chip" data-target="sindresorhus">sindresorhus</span><span class="chip" data-target="facebook/react">facebook/react</span></div><div class="loading" id="loading">Fetching public GitHub data and building the artefact…</div><div class="error" id="error"></div></div>
     <div class="preview"><div class="mini"><div class="orbit"><div class="node" style="width:82px;height:82px;left:45%;top:43%"></div><div class="node" style="width:42px;height:42px;left:20%;top:56%;background:linear-gradient(135deg,var(--green),var(--cyan))"></div><div class="node" style="width:56px;height:56px;left:76%;top:35%;background:linear-gradient(135deg,var(--pink),var(--amber))"></div><div class="node" style="width:32px;height:32px;left:68%;top:75%"></div></div></div></div>
   </section>
-  <section class="result" id="result"><div class="grid"><aside class="card"><div class="profile"><img class="avatar" id="avatar" alt=""><div><div class="name" id="displayName"></div><div class="muted" id="handle"></div></div></div><div class="stats"><div class="stat"><b id="repoCount">–</b><span class="muted" id="stat1Label">repos</span></div><div class="stat"><b id="stars">–</b><span class="muted">stars</span></div><div class="stat"><b id="followers">–</b><span class="muted" id="stat3Label">followers</span></div></div><hr style="border:0;border-top:1px solid rgba(255,255,255,.09);margin:18px 0"><div class="muted" id="archetypeLabel">Builder archetype</div><div class="archetype" id="archetype">–</div><p class="insight" id="summary"></p><div class="trump"><div class="trump-head"><div class="trump-title" id="battleTitle">Builder Battle Card</div><div class="trump-badge" id="trumpTier">Rare</div></div><div class="trump-grid"><div class="trump-stat"><span>Build Power</span><b id="tcBuild">–</b></div><div class="trump-stat"><span>Impact</span><b id="tcImpact">–</b></div><div class="trump-stat"><span>Versatility</span><b id="tcVersatility">–</b></div><div class="trump-stat"><span>Momentum</span><b id="tcMomentum">–</b></div><div class="trump-stat"><span>Community</span><b id="tcCommunity">–</b></div><div class="trump-stat"><span>Originality</span><b id="tcOriginality">–</b></div></div><div class="trump-special" id="tcSpecial"></div></div></aside><div class="card"><div class="section-title"><h2 id="mainPanelTitle">Builder graph</h2><div class="copyrow"><button class="share" id="copyAgent">Copy agent pack</button><button class="share" id="share">Copy share link</button></div></div><div class="canvas" id="graph"></div><pre class="agentpack hidden" id="agentPack"></pre></div></div><div class="grid2"><div class="card"><div class="section-title"><h2>Strengths with evidence</h2></div><div class="bars" id="strengths"></div></div><div class="card"><div class="section-title"><h2>Theme clusters</h2></div><div class="tags" id="themes"></div></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2 id="projectsTitle">Most interesting public projects</h2></div><div class="repos" id="repos"></div></div></section>
+  <section class="result" id="result"><div class="grid"><aside class="card"><div class="profile"><img class="avatar" id="avatar" alt="" crossorigin="anonymous"><div><div class="name" id="displayName"></div><div class="muted" id="handle"></div></div></div><div class="stats"><div class="stat"><b id="repoCount">–</b><span class="muted" id="stat1Label">repos</span></div><div class="stat"><b id="stars">–</b><span class="muted">stars</span></div><div class="stat"><b id="followers">–</b><span class="muted" id="stat3Label">followers</span></div></div><hr style="border:0;border-top:1px solid rgba(255,255,255,.09);margin:18px 0"><div class="muted" id="archetypeLabel">Builder archetype</div><div class="archetype" id="archetype">–</div><p class="insight" id="summary"></p><div class="trump"><div class="trump-head"><div class="trump-title" id="battleTitle">Builder Battle Card</div><div class="trump-badge" id="trumpTier">Rare</div></div><div class="trump-grid"><div class="trump-stat"><span>Build Power</span><b id="tcBuild">–</b></div><div class="trump-stat"><span>Impact</span><b id="tcImpact">–</b></div><div class="trump-stat"><span>Versatility</span><b id="tcVersatility">–</b></div><div class="trump-stat"><span>Momentum</span><b id="tcMomentum">–</b></div><div class="trump-stat"><span>Community</span><b id="tcCommunity">–</b></div><div class="trump-stat"><span>Originality</span><b id="tcOriginality">–</b></div></div><div class="trump-special" id="tcSpecial"></div></div></aside><div class="card"><div class="section-title"><h2 id="mainPanelTitle">Builder graph</h2><div class="copyrow"><button class="share" id="copyAgent">Copy pack</button><button class="share" id="share">Copy link</button><button class="share" id="savePng" title="Download battle card as PNG">Save PNG</button><button class="share" id="tweet" title="Share on X">Tweet</button><button class="share share-primary" id="nativeShare" title="Open share sheet">Share</button></div></div><div class="canvas" id="graph"></div><pre class="agentpack hidden" id="agentPack"></pre></div></div><div class="grid2"><div class="card"><div class="section-title"><h2>Strengths with evidence</h2></div><div class="bars" id="strengths"></div></div><div class="card"><div class="section-title"><h2>Theme clusters</h2></div><div class="tags" id="themes"></div></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2 id="projectsTitle">Most interesting public projects</h2></div><div class="repos" id="repos"></div></div></section>
   <div class="footer">Static-first MVP. Deployed on AWS via SST. Agent endpoint at <code>agents.devprint.dev</code>.</div>
 </div>`;
 
@@ -181,6 +182,9 @@ function renderBattleCard(b: ReturnType<typeof battleStats>, isRepo: boolean) {
   $('trumpTier').textContent = b.tier;
   $('battleTitle').textContent = isRepo ? 'Repo Battle Card' : 'Builder Battle Card';
   $('tcSpecial').textContent = `Special move: ${isRepo ? 'gives agents a clean starting brief' : 'keeps building until it works'}.`;
+  // Drive tier-based glow + badge colour via a data attribute the CSS targets.
+  const trump = document.querySelector('.trump');
+  if (trump) trump.setAttribute('data-tier', b.tier.toLowerCase());
 }
 
 function renderStrengths(topLangs: [string, number][]) {
@@ -198,9 +202,10 @@ function renderThemes(themes: ReturnType<typeof getThemes>) {
 
 function renderRepos(repos: GhRepo[], isRepo: boolean) {
   $('projectsTitle').textContent = isRepo ? 'Repository facts' : 'Most interesting public projects';
-  $('repos').innerHTML = repos.slice(0, 6).map((r) =>
-    `<a class="repo" href="${r.html_url}" target="_blank" rel="noreferrer"><b>${r.name}</b><p>${r.description || 'No description yet.'}</p><small>${r.language || 'Mixed'} · ★ ${r.stargazers_count} · updated ${new Date(r.updated_at).toLocaleDateString()}</small></a>`,
-  ).join('');
+  $('repos').innerHTML = repos.slice(0, 6).map((r) => {
+    const accent = langColors[r.language ?? ''] ?? '#31d9ff';
+    return `<a class="repo" href="${r.html_url}" target="_blank" rel="noreferrer" style="--accent:${accent}"><b>${r.name}</b><p>${r.description || 'No description yet.'}</p><small>${r.language || 'Mixed'} · ★ ${r.stargazers_count} · updated ${new Date(r.updated_at).toLocaleDateString()}</small></a>`;
+  }).join('');
 }
 
 function renderGraph(topLangs: [string, number][], themes: ReturnType<typeof getThemes>, arch: string) {
@@ -240,15 +245,102 @@ $('form').addEventListener('submit', (e) => {
 document.querySelectorAll<HTMLElement>('.chip').forEach((c) => {
   c.onclick = () => build(c.dataset.target || '');
 });
+function flash(btn: HTMLElement, text: string, after: string) {
+  const original = after;
+  btn.textContent = text;
+  setTimeout(() => (btn.textContent = original), 1200);
+}
+
 $('share').onclick = async () => {
   await navigator.clipboard.writeText(location.href);
-  $('share').textContent = 'Copied';
-  setTimeout(() => ($('share').textContent = 'Copy share link'), 1200);
+  flash($('share'), 'Copied', 'Copy link');
 };
 $('copyAgent').onclick = async () => {
+  if (!lastPack) return;
   await navigator.clipboard.writeText(lastPack);
-  $('copyAgent').textContent = 'Copied pack';
-  setTimeout(() => ($('copyAgent').textContent = 'Copy agent pack'), 1200);
+  flash($('copyAgent'), 'Copied', 'Copy pack');
+};
+
+async function captureCard(): Promise<Blob | null> {
+  const node = document.querySelector<HTMLElement>('aside.card');
+  if (!node) return null;
+  // Render at 2x for crisp image; transparent bg lets the gradient show on dark surfaces.
+  const dataUrl = await toPng(node, {
+    pixelRatio: 2,
+    backgroundColor: '#0a0d18',
+    cacheBust: true,
+    style: { transform: 'none' },
+  });
+  const r = await fetch(dataUrl);
+  return await r.blob();
+}
+
+$('savePng').onclick = async () => {
+  const btn = $('savePng');
+  flash(btn, 'Rendering…', 'Save PNG');
+  try {
+    const blob = await captureCard();
+    if (!blob) return;
+    const target = location.pathname.replace(/\/+/g, '-').replace(/^-+|-+$/g, '') || 'devprint';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `devprint-${target}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    flash(btn, 'Saved', 'Save PNG');
+  } catch {
+    flash(btn, 'Failed', 'Save PNG');
+  }
+};
+
+$('tweet').onclick = () => {
+  const target = location.pathname.replace(/^\/+/, '') || '';
+  const archetype = $('archetype').textContent ?? 'Builder';
+  const tier = $('trumpTier').textContent ?? '';
+  const text = `My Devprint card: ${archetype} (${tier}). See yours: devprint.dev/${target}`;
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.href)}`;
+  window.open(url, '_blank', 'noopener');
+};
+
+$('nativeShare').onclick = async () => {
+  const target = location.pathname.replace(/^\/+/, '') || '';
+  const archetype = $('archetype').textContent ?? 'Builder';
+  const tier = $('trumpTier').textContent ?? '';
+  const shareData: ShareData = {
+    title: `Devprint — ${target || 'a developer'}`,
+    text: `${archetype} · ${tier} — see the shape of any developer's work.`,
+    url: location.href,
+  };
+
+  // If the platform supports sharing files, attach the rendered PNG so social
+  // apps can post the card image directly.
+  if ('canShare' in navigator) {
+    try {
+      const blob = await captureCard();
+      if (blob) {
+        const file = new File([blob], 'devprint-card.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          (shareData as ShareData & { files: File[] }).files = [file];
+        }
+      }
+    } catch {
+      // ignore; fall back to URL-only share
+    }
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch {
+      // User cancelled or failed — fall through to clipboard.
+    }
+  }
+  await navigator.clipboard.writeText(location.href);
+  flash($('nativeShare'), 'Link copied', 'Share');
 };
 $('humanMode').onclick = () => setMode('human');
 $('agentMode').onclick = () => setMode('agent');
