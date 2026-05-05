@@ -48,7 +48,7 @@ app.innerHTML = `
     <div><div class="eyebrow" id="eyebrow"></div><h1 class="h1" id="heroTitle"></h1><p class="lead" id="heroLead"></p><form class="search" id="form"><input id="target" placeholder="github.com/jhammant or jhammant/factcheck" autocomplete="off" /><button id="go">Generate</button></form><div class="examples"><span class="chip" data-target="jhammant">jhammant</span><span class="chip" data-target="jhammant/factcheck">jhammant/factcheck</span><span class="chip" data-target="sindresorhus">sindresorhus</span><span class="chip" data-target="facebook/react">facebook/react</span></div><div class="loading" id="loading">Fetching public GitHub data and building the artefact…</div><div class="error" id="error"></div></div>
     <div class="preview"><div class="mini"><div class="orbit"><div class="node" style="width:82px;height:82px;left:45%;top:43%"></div><div class="node" style="width:42px;height:42px;left:20%;top:56%;background:linear-gradient(135deg,var(--green),var(--cyan))"></div><div class="node" style="width:56px;height:56px;left:76%;top:35%;background:linear-gradient(135deg,var(--pink),var(--amber))"></div><div class="node" style="width:32px;height:32px;left:68%;top:75%"></div></div></div></div>
   </section>
-  <section class="result" id="result"><div class="grid"><aside class="card"><div class="profile"><img class="avatar" id="avatar" alt="" crossorigin="anonymous"><div><div class="name" id="displayName"></div><div class="muted" id="handle"></div></div></div><div class="stats"><div class="stat"><b id="repoCount">–</b><span class="muted" id="stat1Label">repos</span></div><div class="stat"><b id="stars">–</b><span class="muted">stars</span></div><div class="stat"><b id="followers">–</b><span class="muted" id="stat3Label">followers</span></div></div><hr style="border:0;border-top:1px solid rgba(255,255,255,.09);margin:18px 0"><div class="muted" id="archetypeLabel">Builder archetype</div><div class="archetype" id="archetype">–</div><p class="insight" id="summary"></p><div class="trump"><div class="trump-head"><div class="trump-title" id="battleTitle">Builder Battle Card</div><div class="trump-badge" id="trumpTier">Rare</div></div><div class="trump-grid"><div class="trump-stat"><span>Build Power</span><b id="tcBuild">–</b></div><div class="trump-stat"><span>Impact</span><b id="tcImpact">–</b></div><div class="trump-stat"><span>Versatility</span><b id="tcVersatility">–</b></div><div class="trump-stat"><span>Momentum</span><b id="tcMomentum">–</b></div><div class="trump-stat"><span>Community</span><b id="tcCommunity">–</b></div><div class="trump-stat"><span>Originality</span><b id="tcOriginality">–</b></div></div><div class="trump-special" id="tcSpecial"></div></div></aside><div class="card"><div class="section-title"><h2 id="mainPanelTitle">Builder graph</h2><div class="copyrow"><button class="share" id="copyAgent">Copy pack</button><button class="share" id="share">Copy link</button><button class="share" id="savePng" title="Download battle card as PNG">Save PNG</button><button class="share" id="tweet" title="Share on X">Tweet</button><button class="share share-primary" id="nativeShare" title="Open share sheet">Share</button></div></div><div class="canvas" id="graph"></div><pre class="agentpack hidden" id="agentPack"></pre></div></div><div class="grid2"><div class="card"><div class="section-title"><h2>Strengths with evidence</h2></div><div class="bars" id="strengths"></div></div><div class="card"><div class="section-title"><h2>Theme clusters</h2></div><div class="tags" id="themes"></div></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2 id="projectsTitle">Most interesting public projects</h2></div><div class="repos" id="repos"></div></div></section>
+  <section class="result" id="result"><div class="grid"><aside class="card"><div class="profile"><img class="avatar" id="avatar" alt="" crossorigin="anonymous"><div><div class="name" id="displayName"></div><div class="muted" id="handle"></div></div></div><div class="stats"><div class="stat"><b id="repoCount">–</b><span class="muted" id="stat1Label">repos</span></div><div class="stat"><b id="stars">–</b><span class="muted">stars</span></div><div class="stat"><b id="followers">–</b><span class="muted" id="stat3Label">followers</span></div></div><hr style="border:0;border-top:1px solid rgba(255,255,255,.09);margin:18px 0"><div class="muted" id="archetypeLabel">Builder archetype</div><div class="archetype" id="archetype">–</div><p class="insight" id="summary"></p><div class="trump"><div class="trump-head"><div class="trump-title" id="battleTitle">Builder Battle Card</div><div class="trump-badge" id="trumpTier">Rare</div></div><div class="trump-grid"><div class="trump-stat"><span>Build Power</span><b id="tcBuild">–</b></div><div class="trump-stat"><span>Impact</span><b id="tcImpact">–</b></div><div class="trump-stat"><span>Versatility</span><b id="tcVersatility">–</b></div><div class="trump-stat"><span>Momentum</span><b id="tcMomentum">–</b></div><div class="trump-stat"><span>Community</span><b id="tcCommunity">–</b></div><div class="trump-stat"><span>Originality</span><b id="tcOriginality">–</b></div></div><div class="trump-special" id="tcSpecial"></div></div></aside><div class="card"><div class="section-title"><h2 id="mainPanelTitle">Builder graph</h2><div class="copyrow"><button class="share" id="copyAgent">Copy pack</button><button class="share" id="share">Copy link</button><button class="share" id="savePng" title="Download battle card as PNG">Save PNG</button><button class="share" id="tweet" title="Share on X">Tweet</button><button class="share share-primary" id="nativeShare" title="Open share sheet">Share</button></div></div><div class="canvas" id="graph"></div><pre class="agentpack hidden" id="agentPack"></pre></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2>Insights</h2><div class="muted" id="insightsTagline" style="font-size:13px"></div></div><div class="insights" id="insights"></div></div><div class="grid2" style="margin-top:18px"><div class="card"><div class="section-title"><h2>Activity, last 24 months</h2><span class="muted" id="activityCaption" style="font-size:12px"></span></div><div class="diag" id="activityDiag"></div></div><div class="card"><div class="section-title"><h2>Repo health</h2><span class="muted" style="font-size:12px">stars × recency × forks</span></div><div class="diag" id="healthDiag"></div></div></div><div class="grid2"><div class="card"><div class="section-title"><h2>Strengths with evidence</h2></div><div class="bars" id="strengths"></div></div><div class="card"><div class="section-title"><h2>Theme clusters</h2></div><div class="tags" id="themes"></div></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2 id="projectsTitle">Most interesting public projects</h2></div><div class="repos" id="repos"></div></div></section>
   <div class="footer">Static-first MVP. Deployed on AWS via SST. Agent endpoint at <code>agents.devprint.dev</code>.</div>
 </div>`;
 
@@ -122,6 +122,17 @@ async function build(raw: string, scroll = true) {
     renderStrengths(topLangs);
     renderThemes(themes);
     renderRepos(repos, isRepo);
+    if (!isRepo) {
+      renderInsights(profile, repos, totalStars);
+      renderActivity(repos);
+      renderHealth(repos);
+    } else {
+      // Repo pages don't need user-level insights yet; clear stale content.
+      $('insights').innerHTML = '';
+      $('insightsTagline').textContent = '';
+      $('activityDiag').innerHTML = '';
+      $('healthDiag').innerHTML = '';
+    }
 
     // Fetch the agent pack from the Lambda (it has a server-side GitHub token,
     // and CloudFront caches the response). Doing this client-side via
@@ -208,34 +219,317 @@ function renderRepos(repos: GhRepo[], isRepo: boolean) {
   }).join('');
 }
 
+// ── derived insight panels ─────────────────────────────────────────────────
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function renderInsights(profile: GhUser, repos: GhRepo[], totalStars: number) {
+  const now = Date.now();
+  const dayMs = 86_400_000;
+
+  // Most recent push.
+  const newest = repos
+    .map((r) => new Date(r.updated_at).getTime())
+    .sort((a, b) => b - a)[0];
+  const daysSince = newest ? Math.round((now - newest) / dayMs) : Number.POSITIVE_INFINITY;
+  const recencyText = daysSince < 1 ? 'today' : daysSince === 1 ? 'yesterday' : daysSince < 30 ? `${daysSince} days ago` : daysSince < 365 ? `${Math.round(daysSince / 30)} months ago` : `${Math.round(daysSince / 365)} years ago`;
+
+  // Star concentration: how much of total stars sits in the top repo.
+  const sortedByStars = [...repos].sort((a, b) => b.stargazers_count - a.stargazers_count);
+  const topStarRepo = sortedByStars[0];
+  const topRepoShare = topStarRepo && totalStars > 0 ? topStarRepo.stargazers_count / totalStars : 0;
+  const concentrationText =
+    totalStars === 0
+      ? 'Stars: none yet — this profile flies under the radar.'
+      : topRepoShare > 0.7
+        ? `Specialist signal: ${Math.round(topRepoShare * 100)}% of all ${totalStars} stars sit in **${topStarRepo!.name}** alone.`
+        : topRepoShare > 0.4
+          ? `Concentrated: ${Math.round(topRepoShare * 100)}% of stars are in **${topStarRepo!.name}**, with the rest spread across the portfolio.`
+          : `Generalist signal: stars are spread across the portfolio (top repo holds ${Math.round(topRepoShare * 100)}%).`;
+
+  // Maintenance: % of repos updated in the last year.
+  const yearAgo = now - 365 * dayMs;
+  const maintainedCount = repos.filter((r) => new Date(r.updated_at).getTime() > yearAgo).length;
+  const maintainedPct = repos.length > 0 ? Math.round((maintainedCount / repos.length) * 100) : 0;
+  const maintenanceText =
+    maintainedPct >= 70
+      ? `Active maintainer: ${maintainedPct}% of public repos updated in the last 12 months.`
+      : maintainedPct >= 30
+        ? `Mixed maintenance: ${maintainedPct}% of public repos saw an update in the last year — older repos are likely experiments.`
+        : `Mostly archive: only ${maintainedPct}% of public repos updated in the last 12 months. Treat older repos as historical.`;
+
+  // Peak month — most repos updated in a single calendar month over the last 24.
+  const buckets = new Array(24).fill(0);
+  const dNow = new Date();
+  for (const r of repos) {
+    const d = new Date(r.updated_at);
+    const monthsAgo = (dNow.getFullYear() - d.getFullYear()) * 12 + (dNow.getMonth() - d.getMonth());
+    if (monthsAgo >= 0 && monthsAgo < 24) buckets[23 - monthsAgo]++;
+  }
+  const peakIdx = buckets.indexOf(Math.max(...buckets));
+  const peakDate = new Date(dNow.getFullYear(), dNow.getMonth() - (23 - peakIdx), 1);
+  const peakLabel = `${MONTH_NAMES[peakDate.getMonth()]} ${peakDate.getFullYear()}`;
+  const peakCount = buckets[peakIdx];
+  const peakText = peakCount > 0 ? `Peak month: **${peakLabel}** (${peakCount} repo${peakCount === 1 ? '' : 's'} updated).` : '';
+
+  // Diversity: number of distinct primary languages, weighted by repo count.
+  const langCount = new Set(repos.map((r) => r.language).filter(Boolean)).size;
+  const breadthText = langCount >= 6
+    ? `Breadth: works comfortably across **${langCount} languages**.`
+    : langCount >= 3
+      ? `Cross-stack: regular use of **${langCount} languages**.`
+      : `Focused: primarily ships in ${langCount} language${langCount === 1 ? '' : 's'}.`;
+
+  // Forks they pull (signs of being part of larger ecosystems).
+  const forkCount = repos.filter((r) => r.fork).length;
+  const forkText = forkCount > 0 ? `Forks ${forkCount} project${forkCount === 1 ? '' : 's'} — engages with others' code.` : null;
+
+  const tagline = `Last push ${recencyText} · ${profile.public_repos} public repos · ${totalStars.toLocaleString()} stars`;
+  $('insightsTagline').textContent = tagline;
+
+  const insights = [concentrationText, maintenanceText, peakText, breadthText, forkText].filter(Boolean) as string[];
+  $('insights').innerHTML = insights
+    .map((t) => `<div class="insight-line">${markBold(t)}</div>`)
+    .join('');
+}
+
+function markBold(s: string): string {
+  return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+}
+
+function renderActivity(repos: GhRepo[]) {
+  const W = 600;
+  const H = 140;
+  const months = 24;
+  const buckets: { count: number; label: string }[] = [];
+  const dNow = new Date();
+  for (let i = 0; i < months; i++) {
+    const d = new Date(dNow.getFullYear(), dNow.getMonth() - (months - 1 - i), 1);
+    buckets.push({ count: 0, label: `${MONTH_NAMES[d.getMonth()]} ${String(d.getFullYear()).slice(2)}` });
+  }
+  for (const r of repos) {
+    const d = new Date(r.updated_at);
+    const monthsAgo = (dNow.getFullYear() - d.getFullYear()) * 12 + (dNow.getMonth() - d.getMonth());
+    if (monthsAgo >= 0 && monthsAgo < months) buckets[months - 1 - monthsAgo].count++;
+  }
+  const max = Math.max(...buckets.map((b) => b.count), 1);
+  const peakIdx = buckets.findIndex((b) => b.count === max);
+  const padding = 28;
+  const innerW = W - padding * 2;
+  const bw = innerW / months;
+  const baseline = H - 28;
+
+  const bars = buckets
+    .map((b, i) => {
+      const h = b.count === 0 ? 3 : Math.max(4, (b.count / max) * (baseline - 18));
+      const x = padding + i * bw + 1;
+      const y = baseline - h;
+      const fill = b.count === 0 ? 'rgba(255,255,255,0.07)' : i === peakIdx ? '#ffd166' : 'url(#dpActGrad)';
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fill}"/>`;
+    })
+    .join('');
+
+  // Axis labels: first, peak, last
+  const labelOf = (i: number, x: number) =>
+    `<text x="${x.toFixed(1)}" y="${(baseline + 16).toFixed(1)}" fill="rgba(255,255,255,0.55)" font-size="10" text-anchor="middle">${buckets[i].label}</text>`;
+  const axisLabels = [
+    labelOf(0, padding + bw / 2),
+    labelOf(months - 1, padding + (months - 1) * bw + bw / 2),
+    peakIdx !== 0 && peakIdx !== months - 1 ? labelOf(peakIdx, padding + peakIdx * bw + bw / 2) : '',
+  ].join('');
+
+  const peakX = padding + peakIdx * bw + bw / 2;
+  const peakY = baseline - Math.max(4, (max / max) * (baseline - 18)) - 6;
+  const peakAnnotation = max > 0 ? `<text x="${peakX.toFixed(1)}" y="${peakY.toFixed(1)}" fill="#ffd166" font-size="10" font-weight="800" text-anchor="middle">${max}</text>` : '';
+
+  $('activityDiag').innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="diag-svg" role="img" aria-label="Repo updates per month over the last 24 months">
+      <defs>
+        <linearGradient id="dpActGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#31d9ff"/>
+          <stop offset="100%" stop-color="#7c5cff"/>
+        </linearGradient>
+      </defs>
+      <line x1="${padding}" x2="${W - padding}" y1="${baseline}" y2="${baseline}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+      ${bars}
+      ${peakAnnotation}
+      ${axisLabels}
+    </svg>`;
+
+  $('activityCaption').textContent = `peak ${buckets[peakIdx].label}, ${max} updates`;
+}
+
+function renderHealth(repos: GhRepo[]) {
+  const W = 600;
+  const H = 240;
+  const padL = 40;
+  const padR = 20;
+  const padT = 14;
+  const padB = 36;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const dNow = Date.now();
+  const dayMs = 86_400_000;
+
+  // Take top 30 by score so the chart stays readable.
+  const subset = [...repos]
+    .filter((r) => !r.fork)
+    .sort((a, b) => scoreRepo(b) - scoreRepo(a))
+    .slice(0, 30);
+
+  if (subset.length === 0) {
+    $('healthDiag').innerHTML = `<div class="muted" style="padding:14px">No public repos to plot.</div>`;
+    return;
+  }
+
+  const xVal = (r: GhRepo) => Math.log2(r.stargazers_count + 1); // 0 → 17 covers 1 to 100k+
+  const xMax = Math.max(4, ...subset.map(xVal));
+  const yVal = (r: GhRepo) => Math.min(730, (dNow - new Date(r.updated_at).getTime()) / dayMs);
+
+  const points = subset
+    .map((r) => {
+      const x = padL + (xVal(r) / xMax) * innerW;
+      const y = padT + (yVal(r) / 730) * innerH;
+      const radius = Math.max(4, Math.min(18, 4 + Math.log2(r.forks_count + 1) * 2.5));
+      const color = langColors[r.language ?? ''] ?? '#7c5cff';
+      const safeName = escapeXml(r.name);
+      return `<g class="health-pt"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${color}" fill-opacity="0.4" stroke="${color}" stroke-width="1.5"/><title>${safeName} · ★ ${r.stargazers_count} · ${r.forks_count} forks · ${r.updated_at.slice(0, 10)}</title></g>`;
+    })
+    .join('');
+
+  const xAxisLabels = [0, 1, 2, 3, 4]
+    .map((p) => {
+      const x = padL + (p / 4) * innerW;
+      const stars = Math.round(Math.pow(2, (p / 4) * xMax) - 1);
+      return `<text x="${x.toFixed(1)}" y="${(H - 14).toFixed(1)}" fill="rgba(255,255,255,0.55)" font-size="10" text-anchor="middle">${stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars}★</text>`;
+    })
+    .join('');
+
+  const yLabels = [0, 90, 365, 730]
+    .map((days) => {
+      const y = padT + (days / 730) * innerH;
+      const lbl = days === 0 ? 'now' : days < 365 ? `${days}d` : `${Math.round(days / 365)}y`;
+      return `<text x="${(padL - 8).toFixed(1)}" y="${(y + 4).toFixed(1)}" fill="rgba(255,255,255,0.55)" font-size="10" text-anchor="end">${lbl}</text>`;
+    })
+    .join('');
+
+  $('healthDiag').innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="diag-svg" role="img" aria-label="Repo health scatter chart">
+      <line x1="${padL}" x2="${W - padR}" y1="${padT}" y2="${padT}" stroke="rgba(255,255,255,0.06)"/>
+      <line x1="${padL}" x2="${W - padR}" y1="${(padT + innerH / 2).toFixed(1)}" y2="${(padT + innerH / 2).toFixed(1)}" stroke="rgba(255,255,255,0.06)"/>
+      <line x1="${padL}" x2="${padL}" y1="${padT}" y2="${padT + innerH}" stroke="rgba(255,255,255,0.12)"/>
+      <line x1="${padL}" x2="${W - padR}" y1="${padT + innerH}" y2="${padT + innerH}" stroke="rgba(255,255,255,0.12)"/>
+      <text x="${padL + 4}" y="${padT + 14}" fill="rgba(98,240,167,0.7)" font-size="10" font-weight="700">popular &amp; active</text>
+      <text x="${(W - padR - 4).toFixed(1)}" y="${padT + innerH - 4}" text-anchor="end" fill="rgba(255,107,107,0.6)" font-size="10" font-weight="700">popular but stale</text>
+      ${points}
+      ${xAxisLabels}
+      ${yLabels}
+    </svg>`;
+}
+
 function renderGraph(topLangs: [string, number][], themes: ReturnType<typeof getThemes>, arch: string) {
   const graph = $('graph');
-  graph.innerHTML = '';
-  const nodes = [
-    ...topLangs.map(([n, c]) => ({ n, c, type: 'lang' as const })),
-    ...themes.slice(0, 4).map(([n, c]) => ({ n, c: c * 2, type: 'theme' as const })),
-  ];
-  nodes.forEach((node, i) => {
-    const angle = (i / Math.max(1, nodes.length)) * Math.PI * 2 - Math.PI / 2;
-    const rad = i % 2 ? 34 : 27;
-    const size = 44 + Math.min(54, node.c * 8);
-    const div = document.createElement('div');
-    div.className = 'bubble';
-    div.style.left = (50 + Math.cos(angle) * rad) + '%';
-    div.style.top = (50 + Math.sin(angle) * rad) + '%';
-    div.style.width = div.style.height = size + 'px';
-    div.style.borderColor = node.type === 'lang' ? (langColors[node.n] || '#31d9ff') : 'rgba(98,240,167,.45)';
-    div.textContent = node.n;
-    graph.appendChild(div);
+  const W = 600;
+  const H = 360;
+  const cx = W / 2;
+  const cy = H / 2;
+
+  const langs = topLangs.slice(0, 8);
+  const ts = themes.slice(0, 6);
+  const langN = Math.max(1, langs.length);
+  const themeN = Math.max(1, ts.length);
+  const maxLang = Math.max(...langs.map(([, c]) => c), 1);
+  const maxTheme = Math.max(...ts.map(([, c]) => c), 1);
+
+  // Languages on the inner orbit, themes on the outer one. Theme angles are
+  // offset so the two layers visually interleave instead of stacking.
+  const langPositions = langs.map(([name, count], i) => {
+    const angle = (i / langN) * Math.PI * 2 - Math.PI / 2;
+    const r = 110;
+    const size = 22 + (count / maxLang) * 18;
+    return {
+      name,
+      count,
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+      size,
+      color: langColors[name] || '#31d9ff',
+    };
   });
-  const core = document.createElement('div');
-  core.className = 'bubble';
-  core.style.left = '50%';
-  core.style.top = '50%';
-  core.style.width = core.style.height = '94px';
-  core.style.background = 'linear-gradient(135deg,rgba(49,217,255,.45),rgba(255,92,200,.32))';
-  core.textContent = arch;
-  graph.appendChild(core);
+  const themePositions = ts.map(([name, count], i) => {
+    const angle = (i / themeN) * Math.PI * 2 - Math.PI / 2 + Math.PI / themeN;
+    const r = 162;
+    const size = 18 + (count / maxTheme) * 8;
+    return {
+      name,
+      count,
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+      size,
+    };
+  });
+
+  const archParts = arch.split(' ');
+  const archLine1 = archParts.length > 1 ? archParts[0] : arch;
+  const archLine2 = archParts.length > 1 ? archParts.slice(1).join(' ') : '';
+
+  const themeLines = themePositions
+    .map((t) => `<line x1="${cx}" y1="${cy}" x2="${t.x.toFixed(1)}" y2="${t.y.toFixed(1)}" stroke="rgba(98,240,167,0.22)" stroke-width="1" stroke-dasharray="2 5"/>`)
+    .join('');
+
+  const langLines = langPositions
+    .map((l) => `<line x1="${cx}" y1="${cy}" x2="${l.x.toFixed(1)}" y2="${l.y.toFixed(1)}" stroke="${l.color}" stroke-opacity="0.4" stroke-width="1.5"/>`)
+    .join('');
+
+  const themeNodes = themePositions
+    .map((t) => `
+      <g class="bg-theme" transform="translate(${t.x.toFixed(1)},${t.y.toFixed(1)})">
+        <circle r="${t.size}" fill="rgba(7,9,19,0.88)" stroke="rgba(98,240,167,0.55)" stroke-width="1.4"/>
+        <text text-anchor="middle" dy="4" fill="rgba(220,255,235,0.95)" font-size="11" font-weight="700">${escapeXml(t.name)}</text>
+      </g>`)
+    .join('');
+
+  const langNodes = langPositions
+    .map((l) => `
+      <g class="bg-lang" transform="translate(${l.x.toFixed(1)},${l.y.toFixed(1)})">
+        <circle r="${l.size + 4}" fill="${l.color}" fill-opacity="0.10"/>
+        <circle r="${l.size}" fill="rgba(7,9,19,0.92)" stroke="${l.color}" stroke-width="2"/>
+        <text text-anchor="middle" dy="4" fill="white" font-size="11" font-weight="800">${escapeXml(l.name)}</text>
+      </g>`)
+    .join('');
+
+  graph.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="builder-graph" role="img" aria-label="Builder graph for ${escapeXml(arch)}">
+      <defs>
+        <radialGradient id="dpBgGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(124,92,255,0.32)"/>
+          <stop offset="55%" stop-color="rgba(124,92,255,0.06)"/>
+          <stop offset="100%" stop-color="rgba(124,92,255,0)"/>
+        </radialGradient>
+        <radialGradient id="dpHubFill" cx="35%" cy="30%" r="80%">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.20)"/>
+          <stop offset="55%" stop-color="rgba(124,92,255,0.42)"/>
+          <stop offset="100%" stop-color="rgba(49,217,255,0.30)"/>
+        </radialGradient>
+      </defs>
+      <circle cx="${cx}" cy="${cy}" r="170" fill="url(#dpBgGlow)"/>
+      <circle cx="${cx}" cy="${cy}" r="110" fill="none" stroke="rgba(255,255,255,0.06)" stroke-dasharray="2 5"/>
+      <circle cx="${cx}" cy="${cy}" r="162" fill="none" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2 5"/>
+      ${themeLines}
+      ${langLines}
+      ${themeNodes}
+      ${langNodes}
+      <g class="bg-hub">
+        <circle cx="${cx}" cy="${cy}" r="58" fill="url(#dpHubFill)" stroke="rgba(255,255,255,0.32)" stroke-width="1.5"/>
+        <circle cx="${cx}" cy="${cy}" r="58" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+        <text x="${cx}" y="${archLine2 ? cy - 4 : cy + 4}" text-anchor="middle" fill="white" font-size="13" font-weight="900" letter-spacing="-0.4">${escapeXml(archLine1)}</text>
+        ${archLine2 ? `<text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="white" font-size="13" font-weight="900" letter-spacing="-0.4">${escapeXml(archLine2)}</text>` : ''}
+      </g>
+    </svg>`;
+}
+
+function escapeXml(s: string): string {
+  return s.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c] as string));
 }
 
 $('form').addEventListener('submit', (e) => {

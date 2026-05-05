@@ -62,21 +62,47 @@ export function battleStats(
   repo?: GhRepo,
   now: number = Date.now(),
 ): BattleStats {
-  const recent = repos.filter((r) => (now - new Date(r.updated_at).getTime()) / DAY_MS < 180).length;
+  // Recalibrated 2026-05-05. The previous version had constants that pushed
+  // every moderately-active dev's stats to 99 (clamped) and every average to
+  // Legendary (>82). New formulas drop the constant bases, use tighter log
+  // multipliers, and tighter tier thresholds so Legendary is genuinely rare.
 
-  const build = clamp(30 + Math.log2(repos.length + 1) * 11 + (repo ? 12 : 0));
-  const impact = clamp(18 + Math.log2(totalStars + 1) * 12 + Math.log2((profile.followers || 0) + 1) * 5);
-  const versatility = clamp(22 + Object.keys(langs).length * 11 + themes.length * 5);
-  const momentum = clamp(20 + (recent / Math.max(1, repos.length)) * 70);
+  const recent = repos.filter((r) => (now - new Date(r.updated_at).getTime()) / DAY_MS < 180).length;
+  const recencyRatio = repos.length ? recent / repos.length : 0;
+  const totalForks = repos.reduce((n, r) => n + r.forks_count, 0);
+  const nonForkCount = repos.filter((r) => !r.fork).length;
+  const langCount = Object.keys(langs).length;
+  const repoBonus = repo ? 8 : 0;
+
+  // Volume of public output — how much have they actually built.
+  const build = clamp(Math.log2(repos.length + 1) * 12 + repoBonus);
+
+  // Reach. Stars matter more than followers.
+  const impact = clamp(Math.log2(totalStars + 1) * 7 + Math.log2((profile.followers || 0) + 1) * 3);
+
+  // Breadth across languages + themes.
+  const versatility = clamp(langCount * 6 + themes.length * 4);
+
+  // Recency of activity. 0 if dormant; ~90 if everything recent.
+  const momentum = clamp(recencyRatio * 90);
+
+  // Followers + forks (signal that others use the work).
   const community = clamp(
-    18 +
-      Math.log2((profile.followers || 0) + 1) * 12 +
-      Math.log2(repos.reduce((n, r) => n + r.forks_count, 0) + 1) * 8,
+    Math.log2((profile.followers || 0) + 1) * 5 + Math.log2(totalForks + 1) * 4,
   );
-  const originality = clamp(35 + repos.filter((r) => !r.fork).length * 1.2 + themes.length * 6);
+
+  // Original output. Rewards non-fork ratio + theme spread + non-fork count.
+  const originality = clamp(
+    nonForkCount > 0
+      ? 5 + (nonForkCount / Math.max(1, repos.length)) * 30 + themes.length * 3 + Math.log2(nonForkCount + 1) * 4
+      : 5,
+  );
 
   const avg = (build + impact + versatility + momentum + community + originality) / 6;
-  const tier: BattleStats['tier'] = avg > 82 ? 'Legendary' : avg > 68 ? 'Epic' : avg > 52 ? 'Rare' : 'Emerging';
+  // Tier thresholds tightened: Legendary now genuinely rare. Calibrated
+  // against test profiles spanning beginner → notable → top-1%.
+  const tier: BattleStats['tier'] =
+    avg >= 78 ? 'Legendary' : avg >= 58 ? 'Epic' : avg >= 38 ? 'Rare' : 'Emerging';
 
   const repoEv = [{ kind: 'derived' as const, ref: `${repos.length} non-fork repos` }];
   const langEv = [{ kind: 'derived' as const, ref: `${Object.keys(langs).length} languages observed` }];
