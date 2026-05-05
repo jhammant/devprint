@@ -111,13 +111,53 @@ describe('agent handler', () => {
     expect(res.status).toBe(400);
   });
 
-  it('returns 501 for safety.md (Wave 2)', async () => {
+  it('returns safety.md as text/markdown', async () => {
     const res = await handle(
       { method: 'GET', path: '/jhammant/factcheck/safety.md', search: '', headers: {} },
       { client: client(), toolVersion: '0.1.0' },
     );
-    expect(res.status).toBe(501);
-    expect(res.body).toContain('safety');
+    expect(res.status).toBe(200);
+    expect(res.headers['Content-Type']).toBe('text/markdown; charset=utf-8');
+    expect(res.body).toContain('# Safety Brief');
+  });
+
+  it('returns receipt.md as text/markdown', async () => {
+    const res = await handle(
+      { method: 'GET', path: '/jhammant/factcheck/receipt.md', search: '', headers: {} },
+      { client: client(), toolVersion: '0.1.0' },
+    );
+    expect(res.status).toBe(200);
+    expect(res.body).toContain('Receipt RC-');
+  });
+
+  it('drift returns JSON with drifted=true when shas differ', async () => {
+    const c = client({ getRepoHeadSha: async () => 'newsha' });
+    const res = await handle(
+      { method: 'GET', path: '/jhammant/factcheck/drift', search: '?sha=oldsha', headers: {} },
+      { client: c, toolVersion: '0.1.0' },
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers['Content-Type']).toBe('application/json; charset=utf-8');
+    const body = JSON.parse(res.body) as { drifted: boolean; currentSha: string };
+    expect(body.drifted).toBe(true);
+    expect(body.currentSha).toBe('newsha');
+  });
+
+  it('drift requires ?sha=', async () => {
+    const res = await handle(
+      { method: 'GET', path: '/jhammant/factcheck/drift', search: '', headers: {} },
+      { client: client(), toolVersion: '0.1.0' },
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('?task= overlays the pack', async () => {
+    const res = await handle(
+      { method: 'GET', path: '/jhammant/factcheck.md', search: '?task=add-tests', headers: {} },
+      { client: client(), toolVersion: '0.1.0' },
+    );
+    expect(res.status).toBe(200);
+    expect(res.body).toContain('Task overlay: add-tests');
   });
 
   it('returns 501 for vs page (Wave 2)', async () => {

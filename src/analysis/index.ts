@@ -57,3 +57,22 @@ export {
   cleanTarget,
 } from './router.ts';
 export type { AgentRoute, ParseResult } from './router.ts';
+
+export { buildSafetyPack, buildSafetyReport } from './safety.ts';
+export type { SafetyTier, SafetyFlag, SafetyReport, SafetyOptions } from './safety.ts';
+
+export { buildReceipt, buildReceiptPack } from './receipt.ts';
+export type { StackReceipt, StackItem, ReceiptOptions } from './receipt.ts';
+
+export { applyTaskOverlay, isKnownTask } from './tasks.ts';
+export type { TaskName } from './tasks.ts';
+
+export { checkDrift } from './drift.ts';
+export type { DriftReport } from './drift.ts';
+
+export {
+  buildBadgeData,
+  buildUserBadgeData,
+  renderBadgeSvg,
+} from './badge.ts';
+export type { BadgeData, BadgeOptions } from './badge.ts';

@@ -1,7 +1,12 @@
 import {
   GitHubError,
+  applyTaskOverlay,
+  buildReceiptPack,
   buildRepoPack,
+  buildSafetyPack,
   buildUserPack,
+  checkDrift,
+  isKnownTask,
   isOptedOut,
   parseAgentPath,
   type AgentRoute,
@@ -45,7 +50,8 @@ export async function handle(
         if (await isOptedOut(deps.client, { kind: 'user', user: route.user })) {
           return optedOut(route.user);
         }
-        const pack = await buildUserPack(deps.client, route.user, packOpts);
+        let pack = await buildUserPack(deps.client, route.user, packOpts);
+        if (route.task && isKnownTask(route.task)) pack = applyTaskOverlay(pack, route.task);
         return withPackHeaders(markdown(pack), pack);
       }
       case 'repo':
@@ -53,14 +59,41 @@ export async function handle(
         if (await isOptedOut(deps.client, { kind: 'repo', user: route.user, repo: route.repo })) {
           return optedOut(`${route.user}/${route.repo}`);
         }
-        const pack = await buildRepoPack(deps.client, route.user, route.repo, packOpts);
+        let pack = await buildRepoPack(deps.client, route.user, route.repo, packOpts);
+        if (route.kind === 'repo' && route.task && isKnownTask(route.task)) {
+          pack = applyTaskOverlay(pack, route.task);
+        }
         return withPackHeaders(markdown(pack), pack);
       }
-      case 'safety':
-      case 'receipt':
+      case 'safety': {
+        if (await isOptedOut(deps.client, { kind: 'repo', user: route.user, repo: route.repo })) {
+          return optedOut(`${route.user}/${route.repo}`);
+        }
+        const pack = await buildSafetyPack(deps.client, route.user, route.repo, packOpts);
+        return withPackHeaders(markdown(pack), pack);
+      }
+      case 'receipt': {
+        if (await isOptedOut(deps.client, { kind: 'repo', user: route.user, repo: route.repo })) {
+          return optedOut(`${route.user}/${route.repo}`);
+        }
+        const pack = await buildReceiptPack(deps.client, route.user, route.repo, packOpts);
+        return withPackHeaders(markdown(pack), pack);
+      }
+      case 'drift': {
+        const sha = route.sha;
+        if (!sha) return badRequest('Missing ?sha=<commit-sha> query parameter');
+        const report = await checkDrift(deps.client, route.user, route.repo, sha);
+        return {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+          },
+          body: JSON.stringify(report, null, 2),
+        };
+      }
       case 'vs':
-      case 'drift':
-        return notImplemented(route.kind);
+        return notImplemented('vs');
     }
   } catch (e) {
     if (e instanceof GitHubError) {
