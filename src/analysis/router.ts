@@ -8,7 +8,9 @@ export type AgentRoute =
   | { kind: 'safety'; user: string; repo: string }        // Wave 2
   | { kind: 'receipt'; user: string; repo: string }       // Wave 2
   | { kind: 'vs'; a: string; b: string }                  // Wave 2
-  | { kind: 'drift'; user: string; repo: string; sha?: string }; // Wave 2
+  | { kind: 'drift'; user: string; repo: string; sha?: string } // Wave 2
+  | { kind: 'user-insights'; user: string }               // JSON sidecar: /<u>.json
+  | { kind: 'repo-insights'; user: string; repo: string }; // JSON sidecar: /<u>/<r>.json
 
 export type ParseResult =
   | { ok: true; route: AgentRoute }
@@ -41,6 +43,15 @@ export function parseAgentPath(rawPath: string, search?: string): ParseResult {
   // /<u>/<r>/drift
   const driftMatch = /^([^/]+)\/([^/]+)\/drift$/i.exec(path);
   if (driftMatch) return ok({ kind: 'drift', user: driftMatch[1], repo: driftMatch[2], sha });
+
+  // /<u>/<r>.json — structured JSON sidecar (must come BEFORE the .md match
+  // so `.json` is not parsed as a repo named "<r>.json" → ".md" suffix).
+  const repoJsonMatch = /^([^/]+)\/([^/]+)\.json$/.exec(path);
+  if (repoJsonMatch) return ok({ kind: 'repo-insights', user: repoJsonMatch[1], repo: repoJsonMatch[2] });
+
+  // /<u>.json
+  const userJsonMatch = /^([^/]+)\.json$/.exec(path);
+  if (userJsonMatch) return ok({ kind: 'user-insights', user: userJsonMatch[1] });
 
   // /<u>/<r>.md  (must come BEFORE the /<u>.md match)
   const repoMatch = /^([^/]+)\/([^/]+)\.md$/.exec(path);

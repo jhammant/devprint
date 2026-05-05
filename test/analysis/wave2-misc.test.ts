@@ -24,6 +24,8 @@ function client(over: Partial<GhClient> = {}): GhClient {
         ? { path: p, content: JSON.stringify({ scripts: { test: 'vitest run' } }) }
         : undefined,
     getRepoHeadSha: async () => 'abc1234',
+    getRecentCommits: async () => [],
+    getCommitActivity: async () => undefined,
     ...over,
   };
 }

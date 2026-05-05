@@ -2,8 +2,10 @@ import {
   GitHubError,
   applyTaskOverlay,
   buildReceiptPack,
+  buildRepoInsights,
   buildRepoPack,
   buildSafetyPack,
+  buildUserInsights,
   buildUserPack,
   checkDrift,
   isKnownTask,
@@ -11,6 +13,7 @@ import {
   parseAgentPath,
   type AgentRoute,
   type GhClient,
+  type Insights,
   type Pack,
   type PackOptions,
 } from '../../../src/analysis/index.ts';
@@ -93,6 +96,24 @@ export async function handle(
           body: JSON.stringify(report, null, 2),
         };
       }
+      case 'user-insights': {
+        if (await isOptedOut(deps.client, { kind: 'user', user: route.user })) {
+          return optedOut(route.user);
+        }
+        const insights = await buildUserInsights(deps.client, route.user, {
+          ...(deps.now ? { generatedAt: deps.now() } : {}),
+        });
+        return jsonInsights(insights);
+      }
+      case 'repo-insights': {
+        if (await isOptedOut(deps.client, { kind: 'repo', user: route.user, repo: route.repo })) {
+          return optedOut(`${route.user}/${route.repo}`);
+        }
+        const insights = await buildRepoInsights(deps.client, route.user, route.repo, {
+          ...(deps.now ? { generatedAt: deps.now() } : {}),
+        });
+        return jsonInsights(insights);
+      }
       case 'vs':
         return notImplemented('vs');
     }
@@ -119,15 +140,33 @@ function withPackHeaders(res: HandlerResponse, pack: Pack): HandlerResponse {
   };
 }
 
+function jsonInsights(insights: Insights): HandlerResponse {
+  return {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      // Same cache window as markdown packs — both are derived from the same
+      // GitHub state, so they should expire together.
+      'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+      'X-Devprint-Target': insights.target,
+      'X-Devprint-Kind': insights.kind,
+    },
+    body: JSON.stringify(insights),
+  };
+}
+
 function targetFromRoute(r: AgentRoute): string {
   switch (r.kind) {
     case 'user':
+    case 'user-insights':
       return r.user;
     case 'repo':
     case 'repo-agents':
     case 'safety':
     case 'receipt':
     case 'drift':
+    case 'repo-insights':
       return `${r.user}/${r.repo}`;
     case 'vs':
       return `${r.a} vs ${r.b}`;

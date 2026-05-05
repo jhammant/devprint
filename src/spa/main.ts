@@ -6,9 +6,14 @@ import {
   cleanTarget,
   createGitHubClient,
   getThemes,
+  rankDetected,
   scoreRepo,
+  type CommitActivityWeek,
+  type DetectedTech,
   type GhRepo,
   type GhUser,
+  type Insights,
+  type StackInference,
 } from '../analysis/index.ts';
 
 // SPA-side GitHub client: unauthenticated, browser-native fetch. The visual
@@ -35,6 +40,22 @@ async function fetchAgentPack(target: string): Promise<string> {
   return r.text();
 }
 
+async function fetchInsights(target: string): Promise<Insights | undefined> {
+  // The JSON sidecar carries the structured data the human-mode panels
+  // need (stack chips, commit heatmap, commit-style line). Built once on the
+  // Lambda and CloudFront-cached so we don't burn the SPA's unauthenticated
+  // 60/hr GitHub budget rebuilding it client-side.
+  const path = `/${target}.json`;
+  const url = AGENT_ORIGIN ? `${AGENT_ORIGIN}${path}` : path;
+  try {
+    const r = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!r.ok) return undefined;
+    return (await r.json()) as Insights;
+  } catch {
+    return undefined;
+  }
+}
+
 type Mode = 'human' | 'agent';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -48,7 +69,7 @@ app.innerHTML = `
     <div><div class="eyebrow" id="eyebrow"></div><h1 class="h1" id="heroTitle"></h1><p class="lead" id="heroLead"></p><form class="search" id="form"><input id="target" placeholder="github.com/jhammant or jhammant/factcheck" autocomplete="off" /><button id="go">Generate</button></form><div class="examples"><span class="chip" data-target="jhammant">jhammant</span><span class="chip" data-target="jhammant/factcheck">jhammant/factcheck</span><span class="chip" data-target="sindresorhus">sindresorhus</span><span class="chip" data-target="facebook/react">facebook/react</span></div><div class="loading" id="loading">Fetching public GitHub data and building the artefact…</div><div class="error" id="error"></div></div>
     <div class="preview"><div class="mini"><div class="orbit"><div class="node" style="width:82px;height:82px;left:45%;top:43%"></div><div class="node" style="width:42px;height:42px;left:20%;top:56%;background:linear-gradient(135deg,var(--green),var(--cyan))"></div><div class="node" style="width:56px;height:56px;left:76%;top:35%;background:linear-gradient(135deg,var(--pink),var(--amber))"></div><div class="node" style="width:32px;height:32px;left:68%;top:75%"></div></div></div></div>
   </section>
-  <section class="result" id="result"><div class="grid"><aside class="card"><div class="profile"><img class="avatar" id="avatar" alt="" crossorigin="anonymous"><div><div class="name" id="displayName"></div><div class="muted" id="handle"></div></div></div><div class="stats"><div class="stat"><b id="repoCount">–</b><span class="muted" id="stat1Label">repos</span></div><div class="stat"><b id="stars">–</b><span class="muted">stars</span></div><div class="stat"><b id="followers">–</b><span class="muted" id="stat3Label">followers</span></div></div><hr style="border:0;border-top:1px solid rgba(255,255,255,.09);margin:18px 0"><div class="muted" id="archetypeLabel">Builder archetype</div><div class="archetype" id="archetype">–</div><p class="insight" id="summary"></p><div class="trump"><div class="trump-head"><div class="trump-title" id="battleTitle">Builder Battle Card</div><div class="trump-badge" id="trumpTier">Rare</div></div><div class="trump-grid"><div class="trump-stat"><span>Build Power</span><b id="tcBuild">–</b></div><div class="trump-stat"><span>Impact</span><b id="tcImpact">–</b></div><div class="trump-stat"><span>Versatility</span><b id="tcVersatility">–</b></div><div class="trump-stat"><span>Momentum</span><b id="tcMomentum">–</b></div><div class="trump-stat"><span>Community</span><b id="tcCommunity">–</b></div><div class="trump-stat"><span>Originality</span><b id="tcOriginality">–</b></div></div><div class="trump-special" id="tcSpecial"></div></div></aside><div class="card"><div class="section-title"><h2 id="mainPanelTitle">Builder graph</h2><div class="copyrow"><button class="share" id="copyAgent">Copy pack</button><button class="share" id="share">Copy link</button><button class="share" id="savePng" title="Download battle card as PNG">Save PNG</button><button class="share" id="tweet" title="Share on X">Tweet</button><button class="share share-primary" id="nativeShare" title="Open share sheet">Share</button></div></div><div class="canvas" id="graph"></div><pre class="agentpack hidden" id="agentPack"></pre></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2>Insights</h2><div class="muted" id="insightsTagline" style="font-size:13px"></div></div><div class="insights" id="insights"></div></div><div class="grid2" style="margin-top:18px"><div class="card"><div class="section-title"><h2>Activity, last 24 months</h2><span class="muted" id="activityCaption" style="font-size:12px"></span></div><div class="diag" id="activityDiag"></div></div><div class="card"><div class="section-title"><h2>Repo health</h2><span class="muted" style="font-size:12px">stars × recency × forks</span></div><div class="diag" id="healthDiag"></div></div></div><div class="grid2"><div class="card"><div class="section-title"><h2>Strengths with evidence</h2></div><div class="bars" id="strengths"></div></div><div class="card"><div class="section-title"><h2>Theme clusters</h2></div><div class="tags" id="themes"></div></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2 id="projectsTitle">Most interesting public projects</h2></div><div class="repos" id="repos"></div></div></section>
+  <section class="result" id="result"><div class="grid"><aside class="card"><div class="profile"><img class="avatar" id="avatar" alt="" crossorigin="anonymous"><div><div class="name" id="displayName"></div><div class="muted" id="handle"></div></div></div><div class="stats"><div class="stat"><b id="repoCount">–</b><span class="muted" id="stat1Label">repos</span></div><div class="stat"><b id="stars">–</b><span class="muted">stars</span></div><div class="stat"><b id="followers">–</b><span class="muted" id="stat3Label">followers</span></div></div><hr style="border:0;border-top:1px solid rgba(255,255,255,.09);margin:18px 0"><div class="muted" id="archetypeLabel">Builder archetype</div><div class="archetype" id="archetype">–</div><p class="insight" id="summary"></p><div class="trump"><div class="trump-head"><div class="trump-title" id="battleTitle">Builder Battle Card</div><div class="trump-badge" id="trumpTier">Rare</div></div><div class="trump-grid"><div class="trump-stat"><span>Build Power</span><b id="tcBuild">–</b></div><div class="trump-stat"><span>Impact</span><b id="tcImpact">–</b></div><div class="trump-stat"><span>Versatility</span><b id="tcVersatility">–</b></div><div class="trump-stat"><span>Momentum</span><b id="tcMomentum">–</b></div><div class="trump-stat"><span>Community</span><b id="tcCommunity">–</b></div><div class="trump-stat"><span>Originality</span><b id="tcOriginality">–</b></div></div><div class="trump-special" id="tcSpecial"></div></div></aside><div class="card"><div class="section-title"><h2 id="mainPanelTitle">Builder graph</h2><div class="copyrow"><button class="share" id="copyAgent">Copy pack</button><button class="share" id="share">Copy link</button><button class="share" id="savePng" title="Download battle card as PNG">Save PNG</button><button class="share" id="tweet" title="Share on X">Tweet</button><button class="share share-primary" id="nativeShare" title="Open share sheet">Share</button></div></div><div class="canvas" id="graph"></div><pre class="agentpack hidden" id="agentPack"></pre></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2>Insights</h2><div class="muted" id="insightsTagline" style="font-size:13px"></div></div><div class="insights" id="insights"></div></div><div class="card hidden" id="stackCard" style="margin-top:18px"><div class="section-title"><h2 id="stackTitle">Detected stack</h2><span class="muted" id="stackSubtitle" style="font-size:12px"></span></div><div id="stackBody"></div></div><div class="card hidden" id="commitCard" style="margin-top:18px"><div class="section-title"><h2>Commit style</h2><span class="muted" id="commitMeta" style="font-size:12px"></span></div><div id="commitBody"></div></div><div class="card hidden" id="heatmapCard" style="margin-top:18px"><div class="section-title"><h2 id="heatmapTitle">Commit heatmap, last 52 weeks</h2><span class="muted" id="heatmapMeta" style="font-size:12px"></span></div><div class="diag" id="heatmapDiag"></div></div><div class="grid2" style="margin-top:18px"><div class="card"><div class="section-title"><h2>Activity, last 24 months</h2><span class="muted" id="activityCaption" style="font-size:12px"></span></div><div class="diag" id="activityDiag"></div></div><div class="card"><div class="section-title"><h2>Repo health</h2><span class="muted" style="font-size:12px">stars × recency × forks</span></div><div class="diag" id="healthDiag"></div></div></div><div class="grid2"><div class="card"><div class="section-title"><h2>Strengths with evidence</h2></div><div class="bars" id="strengths"></div></div><div class="card"><div class="section-title"><h2>Theme clusters</h2></div><div class="tags" id="themes"></div></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2 id="projectsTitle">Most interesting public projects</h2></div><div class="repos" id="repos"></div></div></section>
   <div class="footer">Static-first MVP. Deployed on AWS via SST. Agent endpoint at <code>agents.devprint.dev</code>.</div>
 </div>`;
 
@@ -134,16 +155,20 @@ async function build(raw: string, scroll = true) {
       $('healthDiag').innerHTML = '';
     }
 
-    // Fetch the agent pack from the Lambda (it has a server-side GitHub token,
-    // and CloudFront caches the response). Doing this client-side via
-    // buildUserPack/buildRepoPack would double our GitHub-API calls per page
-    // render against the unauth 60/hr-per-IP ceiling.
-    try {
-      lastPack = await fetchAgentPack(target);
-    } catch {
-      lastPack = `# Devprint Agent Pack: ${target}\n\nThe agent pack endpoint is currently unreachable. Try again in a moment.\n`;
-    }
+    // Fetch the agent pack + structured insights from the Lambda in parallel.
+    // The Lambda has a server-side GitHub token + CloudFront cache; doing
+    // this client-side would double our GitHub-API calls per render against
+    // the unauth 60/hr-per-IP ceiling.
+    const [packResult, insights] = await Promise.all([
+      fetchAgentPack(target).catch(() => undefined),
+      fetchInsights(target),
+    ]);
+    lastPack = packResult ?? `# Devprint Agent Pack: ${target}\n\nThe agent pack endpoint is currently unreachable. Try again in a moment.\n`;
     $('agentPack').textContent = lastPack;
+
+    renderStack(insights, isRepo);
+    renderCommitStyle(insights, isRepo);
+    renderHeatmap(insights);
 
     const agent = currentMode === 'agent';
     $('graph').classList.toggle('hidden', agent);
@@ -530,6 +555,221 @@ function renderGraph(topLangs: [string, number][], themes: ReturnType<typeof get
 
 function escapeXml(s: string): string {
   return s.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c] as string));
+}
+
+// ── stack / commit-style / heatmap renderers (data from /target.json sidecar) ──
+
+const CATEGORY_ORDER: DetectedTech['category'][] = [
+  'framework', 'ai', 'ui', 'db', 'auth', 'payments', 'cloud', 'testing', 'tooling', 'lang', 'other',
+];
+const CATEGORY_LABEL: Record<DetectedTech['category'], string> = {
+  framework: 'Frameworks',
+  ai: 'AI / ML',
+  ui: 'UI / styling',
+  db: 'Database / ORM',
+  auth: 'Auth',
+  payments: 'Payments',
+  cloud: 'Cloud / infra',
+  testing: 'Testing',
+  tooling: 'Tooling',
+  lang: 'Languages',
+  other: 'Other',
+};
+const CATEGORY_ACCENT: Record<DetectedTech['category'], string> = {
+  framework: '#7c5cff',
+  ai: '#62f0a7',
+  ui: '#31d9ff',
+  db: '#ffd166',
+  auth: '#ff5cc8',
+  payments: '#62f0a7',
+  cloud: '#31d9ff',
+  testing: '#a97bff',
+  tooling: '#9aa7c7',
+  lang: '#3178c6',
+  other: '#9aa7c7',
+};
+
+function renderStack(insights: Insights | undefined, isRepo: boolean) {
+  const card = $('stackCard');
+  const body = $('stackBody');
+  const subtitle = $('stackSubtitle');
+
+  if (!insights || insights.stack.detected.length === 0) {
+    card.classList.add('hidden');
+    body.innerHTML = '';
+    subtitle.textContent = '';
+    return;
+  }
+  card.classList.remove('hidden');
+  $('stackTitle').textContent = isRepo ? 'Detected stack' : 'Detected stack (top 3 active repos)';
+  subtitle.textContent = `${insights.stack.detected.length} libraries detected · ${insights.stack.ecosystems.join(', ')}`;
+
+  // Render category chip groups, then per-repo breakdown for users.
+  const grouped = groupDetected(insights.stack.detected);
+  const groups = CATEGORY_ORDER
+    .filter((c) => grouped.has(c))
+    .map((c) => {
+      const items = grouped.get(c)!;
+      const accent = CATEGORY_ACCENT[c];
+      const chips = items
+        .slice(0, 12)
+        .map((t) => `<span class="stack-chip" style="--chip-accent:${accent}" title="${escapeAttr(t.evidence)}">${escapeHtml(t.name)}</span>`)
+        .join('');
+      return `<div class="stack-group"><div class="stack-group-label">${CATEGORY_LABEL[c]}</div><div class="stack-chips">${chips}</div></div>`;
+    })
+    .join('');
+
+  let perRepoHtml = '';
+  if (!isRepo && insights.perRepoStack && insights.perRepoStack.length > 0) {
+    const rows = insights.perRepoStack
+      .filter((r) => r.stack.detected.length > 0)
+      .map((r) => {
+        const top = rankDetectedClient(r.stack.detected).slice(0, 6).map((t) => t.name).join(' · ');
+        return `<div class="stack-repo-row"><b>${escapeHtml(r.repo)}</b><span class="muted">${escapeHtml(top)}</span></div>`;
+      })
+      .join('');
+    if (rows) perRepoHtml = `<div class="stack-perrepo">${rows}</div>`;
+  }
+  body.innerHTML = groups + perRepoHtml;
+}
+
+function rankDetectedClient(items: readonly DetectedTech[]): DetectedTech[] {
+  // Local copy to avoid an extra import path; mirrors analysis/stack.ts.
+  return rankDetected(items);
+}
+
+function groupDetected(items: readonly DetectedTech[]): Map<DetectedTech['category'], DetectedTech[]> {
+  const out = new Map<DetectedTech['category'], DetectedTech[]>();
+  for (const t of rankDetectedClient(items)) {
+    const list = out.get(t.category) ?? [];
+    list.push(t);
+    out.set(t.category, list);
+  }
+  return out;
+}
+
+function renderCommitStyle(insights: Insights | undefined, isRepo: boolean) {
+  const card = $('commitCard');
+  const body = $('commitBody');
+  const meta = $('commitMeta');
+
+  // Commit-style only meaningful for repo pages today (per-repo commits).
+  if (!isRepo || !insights?.commitStyle || insights.commitStyle.signals.sample === 0) {
+    card.classList.add('hidden');
+    body.innerHTML = '';
+    meta.textContent = '';
+    return;
+  }
+
+  const cs = insights.commitStyle;
+  card.classList.remove('hidden');
+  meta.textContent = `${cs.signals.sample} recent commits · ${cs.primary}`;
+
+  const bullets = cs.bullets
+    .map((b) => `<div class="commit-bullet">${markBoldHtml(b)}</div>`)
+    .join('');
+  const samples = cs.samples.length
+    ? `<div class="commit-samples"><span class="muted">Sample subjects</span>${cs.samples
+        .map((s) => `<code>${escapeHtml(s)}</code>`)
+        .join('')}</div>`
+    : '';
+  body.innerHTML = bullets + samples;
+}
+
+function markBoldHtml(s: string): string {
+  // Match the **bold** pattern coming from the inferCommitStyle bullets +
+  // backtick-wrapped inline code, which `inferCommitStyle` uses.
+  return escapeHtml(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function renderHeatmap(insights: Insights | undefined) {
+  const card = $('heatmapCard');
+  const diag = $('heatmapDiag');
+  const meta = $('heatmapMeta');
+  const ca = insights?.commitActivity;
+  if (!ca || ca.length === 0) {
+    card.classList.add('hidden');
+    diag.innerHTML = '';
+    meta.textContent = '';
+    return;
+  }
+
+  card.classList.remove('hidden');
+  $('heatmapTitle').textContent = 'Commit heatmap, last 52 weeks';
+  meta.textContent = insights!.commitActivitySource
+    ? `source: ${insights!.commitActivitySource}`
+    : '';
+
+  // GitHub-style yearly grid: 53 cols × 7 rows. Our input is weekly totals
+  // (no day breakdown), so we paint each column uniformly by intensity.
+  const weeks = ca.slice(-52);
+  const max = Math.max(...weeks.map((w) => w.total), 1);
+  const cell = 11;
+  const gap = 3;
+  const cols = weeks.length;
+  const W = cols * (cell + gap) + 28;
+  const H = 7 * (cell + gap) + 30;
+
+  const colorFor = (n: number) => {
+    if (n === 0) return 'rgba(255,255,255,0.04)';
+    const t = Math.min(1, Math.log2(n + 1) / Math.log2(max + 1));
+    // Linear-ish gradient through the brand palette.
+    if (t < 0.25) return 'rgba(124,92,255,0.28)';
+    if (t < 0.5) return 'rgba(124,92,255,0.55)';
+    if (t < 0.75) return 'rgba(49,217,255,0.75)';
+    return 'rgba(255,209,102,0.95)';
+  };
+
+  const cells: string[] = [];
+  for (let i = 0; i < cols; i++) {
+    const w = weeks[i];
+    const x = 14 + i * (cell + gap);
+    const date = new Date(w.week * 1000);
+    const label = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}: ${w.total} commit${w.total === 1 ? '' : 's'}`;
+    for (let row = 0; row < 7; row++) {
+      const y = 14 + row * (cell + gap);
+      cells.push(
+        `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="2" fill="${colorFor(w.total)}"><title>${label}</title></rect>`,
+      );
+    }
+  }
+
+  // Month labels every ~4 weeks.
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthLabels: string[] = [];
+  let lastLabel = -1;
+  for (let i = 0; i < cols; i++) {
+    const date = new Date(weeks[i].week * 1000);
+    const m = date.getUTCMonth();
+    if (m !== lastLabel) {
+      monthLabels.push(
+        `<text x="${14 + i * (cell + gap)}" y="${H - 6}" font-size="9" fill="rgba(255,255,255,0.45)">${monthNames[m]}</text>`,
+      );
+      lastLabel = m;
+    }
+  }
+
+  // Total commits + peak week summary.
+  const total = ca.reduce((n, w) => n + w.total, 0);
+  const peakIdx = ca.indexOf(ca.reduce((b, w) => (w.total > b.total ? w : b)));
+  const peakDate = new Date(ca[peakIdx].week * 1000);
+  const peakLabel = `${monthNames[peakDate.getUTCMonth()]} ${peakDate.getUTCFullYear()}`;
+
+  diag.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMid meet" class="diag-svg" role="img" aria-label="Commit heatmap">
+      ${cells.join('')}
+      ${monthLabels.join('')}
+    </svg>
+    <div class="muted heatmap-summary">${total.toLocaleString()} commits · peak ${peakLabel} (${ca[peakIdx].total})</div>`;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c] as string));
+}
+function escapeAttr(s: string): string {
+  return escapeHtml(s);
 }
 
 $('form').addEventListener('submit', (e) => {

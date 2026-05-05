@@ -26,6 +26,8 @@ function client(over: Partial<GhClient> = {}): GhClient {
     getReadme: async () => undefined,
     getRepoFile: async () => undefined,
     getRepoHeadSha: async () => undefined,
+    getRecentCommits: async () => [],
+    getCommitActivity: async () => undefined,
     ...over,
   };
 }
@@ -166,5 +168,60 @@ describe('agent handler', () => {
       { client: client(), toolVersion: '0.1.0' },
     );
     expect(res.status).toBe(501);
+  });
+
+  it('returns user-insights JSON for /<user>.json', async () => {
+    const c = client({
+      getRepoFile: async (_o, _r, p) =>
+        p === 'package.json'
+          ? { path: p, content: JSON.stringify({ dependencies: { next: '14', tailwindcss: '3' } }) }
+          : undefined,
+      getCommitActivity: async () => [
+        { week: 1700000000, total: 5 },
+        { week: 1700604800, total: 2 },
+      ],
+    });
+    const res = await handle(
+      { method: 'GET', path: '/jhammant.json', search: '', headers: {} },
+      { client: c, toolVersion: '0.1.0' },
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers['Content-Type']).toBe('application/json; charset=utf-8');
+    const body = JSON.parse(res.body);
+    expect(body.kind).toBe('user');
+    expect(body.target).toBe('jhammant');
+    const detected = body.stack.detected.map((d: { name: string }) => d.name);
+    expect(detected).toContain('Next.js');
+    expect(detected).toContain('Tailwind');
+    expect(body.commitActivity).toHaveLength(2);
+    expect(body.commitActivitySource).toMatch(/^jhammant\//);
+  });
+
+  it('returns repo-insights JSON for /<u>/<r>.json with commit-style + heatmap', async () => {
+    const c = client({
+      getRepoFile: async (_o, _r, p) =>
+        p === 'Cargo.toml'
+          ? { path: p, content: '[dependencies]\naxum = "0.7"\ntokio = { version = "1", features = ["full"] }\n' }
+          : undefined,
+      getRecentCommits: async () => [
+        { sha: 'a', message: 'feat: add login', date: '' },
+        { sha: 'b', message: 'fix: redirect bug', date: '' },
+        { sha: 'c', message: 'chore: bump deps', date: '' },
+      ],
+      getCommitActivity: async () => [{ week: 1700000000, total: 3 }],
+    });
+    const res = await handle(
+      { method: 'GET', path: '/jhammant/factcheck.json', search: '', headers: {} },
+      { client: c, toolVersion: '0.1.0' },
+    );
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.kind).toBe('repo');
+    const detected = body.stack.detected.map((d: { name: string }) => d.name);
+    expect(detected).toContain('Axum');
+    expect(detected).toContain('Tokio');
+    expect(body.commitStyle.signals.sample).toBe(3);
+    expect(body.commitStyle.signals.conventional).toBeGreaterThan(0.5);
+    expect(body.commitActivity).toEqual([{ week: 1700000000, total: 3 }]);
   });
 });

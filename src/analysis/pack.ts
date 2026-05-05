@@ -16,6 +16,17 @@ import {
   buildProvenance,
   provenanceFooter,
 } from './provenance.ts';
+import {
+  detectStack,
+  mergeStacks,
+  rankDetected,
+  type DetectedTech,
+  type StackInference,
+} from './stack.ts';
+import {
+  inferCommitStyle,
+  type CommitStyleVerdict,
+} from './commits.ts';
 
 export type PackOptions = {
   toolVersion: string;
@@ -44,6 +55,12 @@ export async function buildUserPack(
     return { repo: r, description: s.text };
   });
 
+  // Stack inference for the user's top 3 non-fork repos. We fetch package
+  // manifests in parallel and merge the detected tech across repos so the pack
+  // can answer "what does this person actually build with?".
+  const top3 = repos.slice(0, 3);
+  const stack = await detectUserStack(client, top3, allRedactions);
+
   const body = renderUserMarkdown({
     target: owner,
     profile,
@@ -54,6 +71,7 @@ export async function buildUserPack(
     totalStars,
     battle,
     safeDescriptions,
+    stack,
     redactions: allRedactions,
   });
 
@@ -71,6 +89,35 @@ export async function buildUserPack(
     provenance,
     redactions: allRedactions.length,
   };
+}
+
+async function detectUserStack(
+  client: GhClient,
+  repos: readonly GhRepo[],
+  outRedactions: Redaction[],
+): Promise<{ inference: StackInference; perRepo: Array<{ repo: GhRepo; stack: StackInference }> }> {
+  const perRepo: Array<{ repo: GhRepo; stack: StackInference }> = [];
+  const stacks: StackInference[] = [];
+  await Promise.all(
+    repos.map(async (r) => {
+      const owner = r.full_name.split('/')[0];
+      const filesSettled = await Promise.allSettled(
+        packageFileCandidates().map((p) => client.getRepoFile(owner, r.name, p)),
+      );
+      const files = filesSettled
+        .map((s) => (s.status === 'fulfilled' ? s.value : undefined))
+        .filter((f): f is RepoFile => !!f);
+      const safe = files.map((f) => {
+        const s = scrub(f.content, 'config');
+        outRedactions.push(...s.redactions);
+        return { ...f, content: s.text };
+      });
+      const stack = detectStack(safe);
+      perRepo.push({ repo: r, stack });
+      stacks.push(stack);
+    }),
+  );
+  return { inference: mergeStacks(stacks), perRepo };
 }
 
 export async function buildRepoPack(
@@ -93,14 +140,17 @@ export async function buildRepoPack(
 
   const sourceSha = await client.getRepoHeadSha(owner, repoName, repo.default_branch).catch(() => undefined);
 
-  // Fetch README + plausible package files in parallel; never let a single
-  // failure poison the pack.
+  // Fetch README + plausible package files + recent commits in parallel.
+  // Each is wrapped so a single failure can't poison the pack.
   const readmeP = client.getReadme(owner, repoName).catch(() => undefined);
   const filesP = Promise.allSettled(
     packageFileCandidates().map((p) => client.getRepoFile(owner, repoName, p)),
   );
+  const commitsP = client
+    .getRecentCommits(owner, repoName, repo.default_branch, 30)
+    .catch(() => [] as Awaited<ReturnType<GhClient['getRecentCommits']>>);
 
-  const [readmeRaw, filesSettled] = await Promise.all([readmeP, filesP]);
+  const [readmeRaw, filesSettled, commits] = await Promise.all([readmeP, filesP, commitsP]);
   const presentFiles = filesSettled
     .map((s) => (s.status === 'fulfilled' ? s.value : undefined))
     .filter((f): f is RepoFile => !!f);
@@ -119,6 +169,8 @@ export async function buildRepoPack(
   });
 
   const setupClaims = inferSetupCommands(safePackageFiles, repo);
+  const stack = detectStack(safePackageFiles);
+  const commitStyle = inferCommitStyle(commits);
 
   const body = renderRepoMarkdown({
     target: `${owner}/${repoName}`,
@@ -130,6 +182,8 @@ export async function buildRepoPack(
     setupClaims,
     archetype: arch,
     battle,
+    stack,
+    commitStyle,
     redactions: allRedactions,
   });
 
@@ -216,6 +270,7 @@ type UserRender = {
   totalStars: number;
   battle: ReturnType<typeof battleStats>;
   safeDescriptions: { repo: GhRepo; description: string }[];
+  stack: { inference: StackInference; perRepo: Array<{ repo: GhRepo; stack: StackInference }> };
   redactions: readonly Redaction[];
 };
 
@@ -241,6 +296,28 @@ function renderUserMarkdown(m: UserRender): string {
   lines.push(`- Themes: ${m.themes.map(([t]) => t).join(', ') || 'unclear'}`);
   lines.push(`- Builder Battle Card: ${m.battle.tier} (build ${m.battle.build.value} · impact ${m.battle.impact.value} · momentum ${m.battle.momentum.value})`);
   lines.push('');
+
+  // Detected stack across the top 3 active repos. This is what an agent
+  // actually wants to know up front: "which frameworks does this person ship
+  // with right now?" — not the full historical language pie chart.
+  const detected = rankDetected(m.stack.inference.detected);
+  if (detected.length) {
+    lines.push('## Detected stack (top 3 active repos)');
+    const byCategory = groupByCategory(detected);
+    for (const [cat, items] of byCategory) {
+      lines.push(`- ${capitalise(cat)}: ${items.slice(0, 6).map((t) => t.name).join(', ')}`);
+    }
+    if (m.stack.perRepo.length) {
+      lines.push('');
+      lines.push('Per repo:');
+      for (const { repo, stack } of m.stack.perRepo) {
+        const names = rankDetected(stack.detected).slice(0, 6).map((t) => t.name);
+        if (names.length) lines.push(`- **${repo.name}**: ${names.join(', ')}`);
+      }
+    }
+    lines.push('');
+  }
+
   lines.push('## Repos to inspect first');
   for (const { repo, description } of m.safeDescriptions) {
     lines.push(`- **${repo.name}**: ${description || 'no description'} [${repo.language ?? 'mixed'}; ★ ${repo.stargazers_count}; updated ${shortDate(repo.updated_at)}]`);
@@ -272,6 +349,8 @@ type RepoRender = {
   setupClaims: readonly Claim<string>[];
   archetype: string;
   battle: ReturnType<typeof battleStats>;
+  stack: StackInference;
+  commitStyle: CommitStyleVerdict;
   redactions: readonly Redaction[];
 };
 
@@ -300,6 +379,16 @@ function renderRepoMarkdown(m: RepoRender): string {
   lines.push(`- Repo Battle Card: ${m.battle.tier} (build ${m.battle.build.value} · impact ${m.battle.impact.value} · momentum ${m.battle.momentum.value})`);
   lines.push('');
 
+  // Detected frameworks, grouped by category.
+  const detected = rankDetected(m.stack.detected);
+  if (detected.length) {
+    lines.push('## Detected stack');
+    for (const [cat, items] of groupByCategory(detected)) {
+      lines.push(`- ${capitalise(cat)}: ${items.slice(0, 8).map((t) => t.name).join(', ')}`);
+    }
+    lines.push('');
+  }
+
   lines.push('## Likely setup / test commands');
   if (m.setupClaims.length) {
     for (const c of m.setupClaims) lines.push(`- ${formatClaim(c)}`);
@@ -307,6 +396,19 @@ function renderRepoMarkdown(m: RepoRender): string {
     lines.push('- inspect README and package files before running commands');
   }
   lines.push('');
+
+  // Commit-style guidance — derived from the last 30 commits. This is the
+  // single most useful signal for an agent matching the project's voice.
+  if (m.commitStyle.signals.sample > 0) {
+    lines.push(`## Commit style (${m.commitStyle.signals.sample} recent commits sampled)`);
+    for (const b of m.commitStyle.bullets) lines.push(`- ${b}`);
+    if (m.commitStyle.samples.length) {
+      lines.push('');
+      lines.push('Sample subjects:');
+      for (const s of m.commitStyle.samples) lines.push(`  - \`${s.replace(/`/g, "'")}\``);
+    }
+    lines.push('');
+  }
 
   lines.push('## Files to inspect first');
   lines.push('- README.md');
@@ -326,6 +428,9 @@ function renderRepoMarkdown(m: RepoRender): string {
   lines.push('- Read the listed files in order before proposing changes.');
   lines.push('- Run the smallest relevant test/build command before reporting success.');
   lines.push("- Preserve the repo's stack and style unless asked to refactor.");
+  if (m.commitStyle.primary) {
+    lines.push(`- Match the repo's commit style: ${m.commitStyle.primary}`);
+  }
   lines.push('- Treat any redacted strings as known secrets — do not try to reconstruct them.');
   lines.push('');
   lines.push('## Starter prompts');
@@ -345,4 +450,19 @@ function appendRedactionNote(lines: string[], redactions: readonly Redaction[]) 
 
 function shortDate(iso: string): string {
   return iso.slice(0, 10);
+}
+
+function groupByCategory(items: readonly DetectedTech[]): Array<[DetectedTech['category'], DetectedTech[]]> {
+  const order: DetectedTech['category'][] = ['framework', 'ai', 'ui', 'db', 'auth', 'payments', 'cloud', 'testing', 'tooling', 'lang', 'other'];
+  const map = new Map<DetectedTech['category'], DetectedTech[]>();
+  for (const t of items) {
+    const list = map.get(t.category) ?? [];
+    list.push(t);
+    map.set(t.category, list);
+  }
+  return order.filter((c) => map.has(c)).map((c) => [c, map.get(c)!] as [DetectedTech['category'], DetectedTech[]]);
+}
+
+function capitalise(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

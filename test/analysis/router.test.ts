@@ -75,6 +75,27 @@ describe('parseAgentPath', () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.route.kind).toBe('repo');
   });
+
+  it('parses /<user>.json as user-insights', () => {
+    const r = parseAgentPath('/jhammant.json');
+    expect(r.ok).toBe(true);
+    if (r.ok && r.route.kind === 'user-insights') {
+      expect(r.route.user).toBe('jhammant');
+    } else {
+      throw new Error(`expected user-insights, got ${r.ok ? r.route.kind : r.reason}`);
+    }
+  });
+
+  it('parses /<u>/<r>.json as repo-insights', () => {
+    const r = parseAgentPath('/jhammant/factcheck.json');
+    expect(r.ok).toBe(true);
+    if (r.ok && r.route.kind === 'repo-insights') {
+      expect(r.route.user).toBe('jhammant');
+      expect(r.route.repo).toBe('factcheck');
+    } else {
+      throw new Error(`expected repo-insights, got ${r.ok ? r.route.kind : r.reason}`);
+    }
+  });
 });
 
 describe('cleanTarget', () => {

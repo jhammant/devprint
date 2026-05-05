@@ -28,6 +28,16 @@ export type GhClient = {
   getReadme(owner: string, repo: string): Promise<string | undefined>;
   getRepoFile(owner: string, repo: string, path: string): Promise<RepoFile | undefined>;
   getRepoHeadSha(owner: string, repo: string, branch?: string): Promise<string | undefined>;
+  getRecentCommits(
+    owner: string,
+    repo: string,
+    branch?: string,
+    count?: number,
+  ): Promise<Array<{ sha: string; message: string; author?: string; date: string }>>;
+  getCommitActivity(
+    owner: string,
+    repo: string,
+  ): Promise<Array<{ week: number; total: number }> | undefined>;
 };
 
 const PACKAGE_FILES = [
@@ -118,6 +128,45 @@ export function createGitHubClient(opts: GhClientOptions = {}): GhClient {
         `https://api.github.com/repos/${enc(owner)}/${enc(repo)}/commits/${enc(ref)}`,
       );
       return r?.sha;
+    },
+    async getRecentCommits(owner, repo, branch, count) {
+      const perPage = Math.min(Math.max(count ?? 30, 1), 100);
+      type GhCommit = {
+        sha: string;
+        commit: {
+          message: string;
+          author?: { name?: string | null; date?: string | null } | null;
+        };
+        author?: { login?: string | null } | null;
+      };
+      const ref = branch ? `&sha=${enc(branch)}` : '';
+      const list = await getOptional<GhCommit[]>(
+        `https://api.github.com/repos/${enc(owner)}/${enc(repo)}/commits?per_page=${perPage}${ref}`,
+      );
+      if (!list) return [];
+      return list.map((c) => ({
+        sha: c.sha,
+        message: c.commit.message,
+        author: c.author?.login ?? c.commit.author?.name ?? undefined,
+        date: c.commit.author?.date ?? '',
+      }));
+    },
+    async getCommitActivity(owner, repo) {
+      // /stats/commit_activity returns 52 weeks of weekly counts. The endpoint
+      // can return 202 while GitHub builds the cache; treat that as "no data
+      // yet" and let callers fall back to the synthetic activity chart.
+      const r = await f(
+        `https://api.github.com/repos/${enc(owner)}/${enc(repo)}/stats/commit_activity`,
+        { headers },
+      );
+      if (r.status === 202) return undefined;
+      if (!r.ok) {
+        if (r.status === 404) return undefined;
+        throw new GitHubError(r.status, `commit_activity ${r.status}`);
+      }
+      const json = (await r.json()) as Array<{ week: number; total: number; days?: number[] }>;
+      if (!Array.isArray(json) || json.length === 0) return undefined;
+      return json.map((w) => ({ week: w.week, total: w.total }));
     },
   };
 }

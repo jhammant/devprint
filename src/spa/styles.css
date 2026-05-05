@@ -51,4 +51,27 @@ aside.card:hover .profile{transform:translateX(2px)}
 .bg-lang:hover circle:nth-child(2),.bg-theme:hover circle{r:42}
 .bg-hub{filter:drop-shadow(0 0 28px rgba(124,92,255,.35))}
 @keyframes dpHubPulse{0%,100%{opacity:.35}50%{opacity:.65}}
-.bg-hub circle:nth-child(2){animation:dpHubPulse 4s ease-in-out infinite}@media(max-width:900px){.hero,.grid,.grid2{grid-template-columns:1fr}.preview{order:-1}.search{flex-direction:column}button{padding:15px}.repos{grid-template-columns:1fr}.barline{grid-template-columns:90px 1fr 34px}.nav{align-items:flex-start;flex-direction:column;margin-bottom:30px}}
+.bg-hub circle:nth-child(2){animation:dpHubPulse 4s ease-in-out infinite}
+/* detected-stack chips */
+.stack-group{margin-bottom:14px}
+.stack-group:last-child{margin-bottom:0}
+.stack-group-label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:800;margin-bottom:8px}
+.stack-chips{display:flex;gap:7px;flex-wrap:wrap}
+.stack-chip{position:relative;padding:6px 11px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);color:#e9eeff;transition:transform .15s ease,border-color .15s ease,background .15s ease}
+.stack-chip::before{content:"";position:absolute;left:8px;top:50%;width:5px;height:5px;border-radius:50%;background:var(--chip-accent,#7c5cff);transform:translateY(-50%);box-shadow:0 0 8px var(--chip-accent,#7c5cff)}
+.stack-chip{padding-left:20px}
+.stack-chip:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.075)}
+.stack-perrepo{margin-top:14px;display:grid;gap:6px;border-top:1px dashed rgba(255,255,255,.08);padding-top:12px}
+.stack-repo-row{display:grid;grid-template-columns:160px 1fr;gap:14px;font-size:13px;align-items:baseline}
+.stack-repo-row b{font-weight:800;letter-spacing:-.01em}
+/* commit style */
+.commit-bullet{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;line-height:1.5;color:#e9eeff}
+.commit-bullet:last-of-type{border-bottom:0}
+.commit-bullet strong{font-weight:850;color:#fff}
+.commit-bullet code{background:rgba(49,217,255,.12);border:1px solid rgba(49,217,255,.18);color:#c7f6ff;padding:1px 6px;border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.commit-samples{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.08);display:grid;gap:6px}
+.commit-samples .muted{font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;margin-bottom:4px}
+.commit-samples code{background:rgba(7,9,19,.6);border:1px solid rgba(255,255,255,.08);color:#dce6ff;padding:6px 10px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;display:block;overflow:auto}
+/* heatmap */
+.heatmap-summary{margin-top:8px;font-size:12px;text-align:right}
+@media(max-width:900px){.hero,.grid,.grid2{grid-template-columns:1fr}.preview{order:-1}.search{flex-direction:column}button{padding:15px}.repos{grid-template-columns:1fr}.barline{grid-template-columns:90px 1fr 34px}.nav{align-items:flex-start;flex-direction:column;margin-bottom:30px}.stack-repo-row{grid-template-columns:1fr}}

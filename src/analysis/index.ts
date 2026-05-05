@@ -48,6 +48,23 @@ export {
 export { buildUserPack, buildRepoPack } from './pack.ts';
 export type { PackOptions } from './pack.ts';
 
+export {
+  detectStack,
+  mergeStacks,
+  rankDetected,
+  summariseStack,
+} from './stack.ts';
+export type { DetectedTech, StackInference, TechCategory } from './stack.ts';
+
+export {
+  fetchRecentCommits,
+  inferCommitStyle,
+} from './commits.ts';
+export type { Commit, CommitStyleSignal, CommitStyleVerdict } from './commits.ts';
+
+export { buildUserInsights, buildRepoInsights } from './insights.ts';
+export type { Insights, CommitActivityWeek, BuildInsightsOptions } from './insights.ts';
+
 export { isOptedOut, STATIC_OPTOUT } from './optout.ts';
 export type { OptOutTarget } from './optout.ts';
 
