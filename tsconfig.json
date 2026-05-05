@@ -12,5 +12,5 @@
     "noEmit": true,
     "strict": true
   },
-  "include": ["src", "functions", "test", "infra"]
+  "include": ["src", "test", "infra"]
 }
