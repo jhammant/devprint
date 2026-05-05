@@ -20,6 +20,10 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
+    "GithubToken": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "Spa": {
       "type": "sst.aws.StaticSite"
       "url": string

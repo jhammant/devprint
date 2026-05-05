@@ -2,8 +2,6 @@ import './styles.css';
 import {
   archetype,
   battleStats,
-  buildRepoPack,
-  buildUserPack,
   cleanTarget,
   createGitHubClient,
   getThemes,
@@ -12,10 +10,29 @@ import {
   type GhUser,
 } from '../analysis/index.ts';
 
-// SPA-side GitHub client: unauthenticated, browser-native fetch.
+// SPA-side GitHub client: unauthenticated, browser-native fetch. The visual
+// card data is fetched directly from GitHub (~2 calls/render). The agent pack
+// is NOT built client-side — that would double the GitHub calls and quickly
+// burn the 60/hr per-IP unauth limit. Instead we fetch the pre-built pack
+// from our agent endpoint, which uses a server-side token.
 const client = createGitHubClient({ userAgent: 'Devprint-SPA/0.1' });
 
-const TOOL_VERSION = '0.1.0';
+const AGENT_ORIGIN =
+  // In prod, agents.devprint.dev is a different host. Locally / on the dev
+  // CloudFront, fall back to "/agents-pack/<target>.md" via Lambda Function
+  // URL — but for now we only run prod with the dual-host setup, so just use
+  // the canonical agent host.
+  location.hostname === 'devprint.dev' || location.hostname === 'www.devprint.dev'
+    ? 'https://agents.devprint.dev'
+    : '';
+
+async function fetchAgentPack(target: string): Promise<string> {
+  const path = `/${target}.md`;
+  const url = AGENT_ORIGIN ? `${AGENT_ORIGIN}${path}` : path;
+  const r = await fetch(url, { headers: { Accept: 'text/markdown' } });
+  if (!r.ok) throw new Error(`Agent pack fetch failed: ${r.status}`);
+  return r.text();
+}
 
 type Mode = 'human' | 'agent';
 
@@ -105,12 +122,15 @@ async function build(raw: string, scroll = true) {
     renderThemes(themes);
     renderRepos(repos, isRepo);
 
-    // Build the agent pack via the shared library so the SPA preview matches
-    // exactly what the Lambda will return.
-    const pack = isRepo
-      ? await buildRepoPack(client, owner, repoName, { toolVersion: TOOL_VERSION })
-      : await buildUserPack(client, owner, { toolVersion: TOOL_VERSION });
-    lastPack = pack.markdown;
+    // Fetch the agent pack from the Lambda (it has a server-side GitHub token,
+    // and CloudFront caches the response). Doing this client-side via
+    // buildUserPack/buildRepoPack would double our GitHub-API calls per page
+    // render against the unauth 60/hr-per-IP ceiling.
+    try {
+      lastPack = await fetchAgentPack(target);
+    } catch {
+      lastPack = `# Devprint Agent Pack: ${target}\n\nThe agent pack endpoint is currently unreachable. Try again in a moment.\n`;
+    }
     $('agentPack').textContent = lastPack;
 
     const agent = currentMode === 'agent';

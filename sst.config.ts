@@ -14,14 +14,17 @@ export default $config({
   async run() {
     const isProd = $app.stage === 'prod';
 
+    const githubToken = new sst.Secret('GithubToken');
+
     const agent = new sst.aws.Function('Agent', {
       handler: 'infra/lambdas/agent/index.handler',
       url: true,
       memory: '512 MB',
       timeout: '10 seconds',
+      link: [githubToken],
       environment: {
         DEVPRINT_TOOL_VERSION: '0.1.0',
-        // GITHUB_TOKEN: set via `sst secret set GithubToken <value>` then re-link in this config.
+        GITHUB_TOKEN: githubToken.value,
       },
     });
 
@@ -30,6 +33,10 @@ export default $config({
       url: true,
       memory: '256 MB',
       timeout: '10 seconds',
+      link: [githubToken],
+      environment: {
+        GITHUB_TOKEN: githubToken.value,
+      },
     });
 
     const site = new sst.aws.StaticSite('Spa', {

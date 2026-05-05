@@ -87,6 +87,7 @@ export async function handle(
           status: 200,
           headers: {
             'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*',
             'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
           },
           body: JSON.stringify(report, null, 2),

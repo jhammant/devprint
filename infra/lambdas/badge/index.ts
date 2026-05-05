@@ -47,20 +47,24 @@ export async function handler(event: Event): Promise<Response> {
     } else {
       return {
         statusCode: 400,
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' },
         body: 'Bad path; expected /<user>.svg or /<user>/<repo>.svg',
       };
     }
   } catch (e) {
     if (e instanceof GitHubError && e.isNotFound) {
-      return { statusCode: 404, headers: { 'Content-Type': 'text/plain' }, body: 'Not found' };
+      return { statusCode: 404, headers: { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' }, body: 'Not found' };
     }
-    return { statusCode: 502, headers: { 'Content-Type': 'text/plain' }, body: 'Upstream error' };
+    return { statusCode: 502, headers: { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' }, body: 'Upstream error' };
   }
 
   const res: Response = {
     statusCode: 200,
-    headers: { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': SVG_CACHE },
+    headers: {
+      'Content-Type': 'image/svg+xml; charset=utf-8',
+      'Cache-Control': SVG_CACHE,
+      'Access-Control-Allow-Origin': '*',
+    },
     body,
   };
 
