@@ -14,10 +14,11 @@
   },
   "dependencies": {
     "@vitejs/plugin-legacy": "latest",
-    "vite": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "vite": "latest"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "vitest": "^2.1.0"
   }
 }
