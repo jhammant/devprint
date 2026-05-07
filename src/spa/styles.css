@@ -52,6 +52,15 @@ aside.card:hover .profile{transform:translateX(2px)}
 .bg-hub{filter:drop-shadow(0 0 28px rgba(124,92,255,.35))}
 @keyframes dpHubPulse{0%,100%{opacity:.35}50%{opacity:.65}}
 .bg-hub circle:nth-child(2){animation:dpHubPulse 4s ease-in-out infinite}
+/* hero-shrink mode: when a result is present, collapse the hero so the
+   battle card / stats land above the fold. The search input stays so the
+   user can still try a new target without scrolling back up. */
+body.has-result .hero{grid-template-columns:1fr;gap:0;align-items:start;padding-top:0;margin-bottom:8px}
+body.has-result .hero .eyebrow,body.has-result .hero .h1,body.has-result .hero .lead,body.has-result .preview,body.has-result .examples{display:none}
+body.has-result .search{margin:0 0 6px;max-width:none}
+body.has-result .search input{padding:11px 14px;font-size:14px;border-radius:14px}
+body.has-result .search button{padding:0 16px;font-size:14px;border-radius:14px}
+body.has-result .result{margin-top:10px}
 /* detected-stack chips */
 .stack-group{margin-bottom:14px}
 .stack-group:last-child{margin-bottom:0}
