@@ -37,6 +37,26 @@ const AGENT_ORIGIN =
     ? 'https://agents.devprint.dev'
     : '';
 
+/**
+ * Fire-and-forget hit to our cookieless analytics beacon. Same backend the
+ * other hammant.io sites use; namespace by site (`devprint.dev`) and use the
+ * path to record what's being viewed (e.g. `/build/sindresorhus?style=letterhead`).
+ * No PII, no cookies. Errors are swallowed — analytics must never break a render.
+ */
+function track(path: string): void {
+  try {
+    const url =
+      'https://echo.ai.hammant.io/analytics/t.gif' +
+      `?s=${encodeURIComponent(location.hostname)}` +
+      `&p=${encodeURIComponent(path)}` +
+      `&r=${encodeURIComponent(document.referrer || 'direct')}` +
+      `&_=${Date.now()}`;
+    new Image().src = url;
+  } catch {
+    /* analytics failures are silent on purpose */
+  }
+}
+
 async function fetchAgentPack(target: string): Promise<string> {
   const path = `/${target}.md`;
   const url = AGENT_ORIGIN ? `${AGENT_ORIGIN}${path}` : path;
@@ -164,6 +184,10 @@ async function build(raw: string, scroll = true) {
     const renderer = currentMode === 'agent' ? null : getStyle(styleId);
     const styleQuery = rawStyleId ? `?style=${rawStyleId}` : '';
     history.replaceState(null, '', `${currentMode === 'agent' ? `/agents/${target}` : `/${target}`}${styleQuery}`);
+    // Per-render hit so the analytics dashboard sees which profiles + styles
+    // are getting traffic, not just landing-page visits. Path keeps the
+    // shape `/build/<target>?style=<id>` so it groups cleanly.
+    track(`/build/${target}${styleQuery}`);
 
     setLoaderStatus(`Pulling agent pack + insights from Lambda…`, 70);
     const [packResult, insights] = await Promise.all([

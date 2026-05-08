@@ -18,5 +18,8 @@
   <body>
     <main id="app"></main>
     <script type="module" src="/src/spa/main.ts"></script>
+    <!-- Cookie-free 1x1 beacon. Counts page loads only; the SPA also fires
+         a per-render event from main.ts so we see which profiles get hit. -->
+    <script>(function(){var s=location.hostname,p=location.pathname,r=document.referrer||'direct';new Image().src='https://echo.ai.hammant.io/analytics/t.gif?s='+encodeURIComponent(s)+'&p='+encodeURIComponent(p)+'&r='+encodeURIComponent(r)+'&_='+Date.now();})();</script>
   </body>
 </html>
