@@ -159,13 +159,23 @@
     });
     useBtn.addEventListener('click', () => {
       const s = styles[active];
-      // The live SPA doesn't yet honour ?style= — once it does, this will land
-      // someone on devprint.dev/<their-username>?style=<id>. For now, surface
-      // the choice so the user can copy the slug.
-      const slug = s.id;
-      const ok = confirm(`Selected: ${s.name} (${slug})\n\nThe live site doesn't yet swap styles per-user — that's a follow-up wiring change. For now, copy the slug "${slug}" so we know which one you picked. OK to copy to clipboard?`);
-      if (ok) {
-        navigator.clipboard.writeText(slug);
+      // Map prototype slug → live-SPA style id. Only a subset of prototypes
+      // are wired to live data so far; the rest preview but show an alert.
+      const liveStyles = {
+        'v1-arcade': 'trading-card',
+        'v2-letterhead': 'letterhead',
+        'v4-holofoil': 'holofoil',
+        'v6-newspaper': 'newspaper',
+      };
+      const liveId = liveStyles[s.id];
+      if (liveId) {
+        const u = prompt(
+          'Apply "' + s.name + '" to which GitHub user or repo?\n(e.g. sindresorhus, jhammant, facebook/react)',
+          'sindresorhus'
+        );
+        if (u) location.href = '/' + u.replace(/^\//, '') + '?style=' + liveId;
+      } else {
+        alert('"' + s.name + '" is still a static prototype — only v1, v2, v4, and v6 are wired to live profile data so far. Pick one of those to apply to a real profile.');
       }
     });
 

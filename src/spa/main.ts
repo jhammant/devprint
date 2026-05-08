@@ -18,6 +18,8 @@ import {
   type RelatedProfile,
   type StackInference,
 } from '../analysis/index.ts';
+import { STYLE_LIST, getStyle } from './styles/index.ts';
+import type { ProfileData } from './styles/index.ts';
 
 // SPA-side GitHub client: unauthenticated, browser-native fetch. The visual
 // card data is fetched directly from GitHub (~2 calls/render). The agent pack
@@ -139,7 +141,41 @@ async function build(raw: string, scroll = true) {
     const arch = isRepo ? `${repo?.language ?? 'Mixed'} Repo` : archetype(langs, repos);
     const battle = battleStats(profile, repos, langs, totalStars, themes, repo);
 
-    history.replaceState(null, '', currentMode === 'agent' ? `/agents/${target}` : `/${target}`);
+    // Style takeover: when ?style=<id> is set, fetch the pack + insights, then
+    // hand off to the chosen renderer instead of running the default flow.
+    const styleId = new URLSearchParams(location.search).get('style');
+    const renderer = getStyle(styleId);
+    const styleQuery = renderer ? `?style=${renderer.id}` : '';
+    history.replaceState(null, '', `${currentMode === 'agent' ? `/agents/${target}` : `/${target}`}${styleQuery}`);
+
+    if (renderer) {
+      // Hide the default chrome — the renderer takes over.
+      const wrap = document.querySelector<HTMLElement>('.wrap');
+      const [packResult, insights] = await Promise.all([
+        fetchAgentPack(target).catch(() => undefined),
+        fetchInsights(target),
+      ]);
+      lastPack = packResult ?? '';
+      const data: ProfileData = {
+        profile, repo, isRepo, repos, topLangs, langs, themes, archetype: arch,
+        totalStars, battle, ...(insights ? { insights } : {}), pack: lastPack, target,
+      };
+      const out = renderer.render(data);
+      document.body.classList.add('style-takeover', `style-${renderer.id}`);
+      if (wrap) wrap.style.display = 'none';
+      let host = document.getElementById('styleHost');
+      if (!host) {
+        host = document.createElement('div');
+        host.id = 'styleHost';
+        document.body.appendChild(host);
+      }
+      host.innerHTML = out.html + renderStylePicker(renderer.id, target, currentMode);
+      out.mount?.(host);
+      wireStylePicker(host, target, currentMode);
+      $('loading').style.display = 'none';
+      ($('go') as HTMLButtonElement).disabled = false;
+      return;
+    }
 
     renderProfile(profile, repo, isRepo, totalStars, arch, themes, repos, topLangs);
     renderBattleCard(battle, isRepo);
@@ -191,6 +227,14 @@ async function build(raw: string, scroll = true) {
     // Shrink the hero so the battle card / stats are the first thing the
     // user sees once they have a result. CSS handles the actual collapse.
     document.body.classList.add('has-result');
+    // Mount the floating style picker so visitors can flip into one of the
+    // alternate views with a click.
+    const existingPicker = document.getElementById('dpStylePicker');
+    if (existingPicker) existingPicker.remove();
+    const pickerDiv = document.createElement('div');
+    pickerDiv.innerHTML = renderStylePicker('default', target, currentMode);
+    document.body.appendChild(pickerDiv.firstElementChild!);
+    wireStylePicker(document, target, currentMode);
     if (scroll) $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     $('error').textContent = e instanceof Error ? e.message : String(e);
@@ -667,6 +711,27 @@ function renderGraph(topLangs: [string, number][], themes: ReturnType<typeof get
 
 function escapeXml(s: string): string {
   return s.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c] as string));
+}
+
+// ---- style picker (floats top-right, swaps view via ?style=) ---------------
+
+function renderStylePicker(currentId: string, target: string, mode: Mode): string {
+  const opts = STYLE_LIST.map((s) => `<option value="${s.id}"${s.id === currentId ? ' selected' : ''}>${s.name}</option>`).join('');
+  return `<div id="dpStylePicker" style="position:fixed;top:14px;right:14px;z-index:10000;display:flex;gap:8px;align-items:center;background:rgba(15,15,15,.85);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);padding:7px 10px;border-radius:999px;font-family:Inter,ui-sans-serif,system-ui;font-size:12px;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    <span style="color:#888;letter-spacing:.04em">style</span>
+    <select id="dpStyleSel" data-target="${target}" data-mode="${mode}" style="background:transparent;color:#fff;border:0;outline:0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding-right:4px">${opts}</select>
+    <a href="/prototypes/" title="See all 10 prototypes" style="color:#62f0a7;text-decoration:none;font-size:11px;letter-spacing:.04em;border-left:1px solid rgba(255,255,255,.15);padding-left:8px">all 10 →</a>
+  </div>`;
+}
+
+function wireStylePicker(root: ParentNode, target: string, mode: Mode): void {
+  const sel = root.querySelector<HTMLSelectElement>('#dpStyleSel');
+  if (!sel) return;
+  sel.addEventListener('change', () => {
+    const v = sel.value;
+    const path = mode === 'agent' ? `/agents/${target}` : `/${target}`;
+    location.href = v === 'default' ? path : `${path}?style=${v}`;
+  });
 }
 
 // ── stack / commit-style / heatmap renderers (data from /target.json sidecar) ──
