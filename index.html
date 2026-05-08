@@ -14,9 +14,58 @@
     <meta name="twitter:title" content="Devprint — see the shape of any developer's work" />
     <meta name="twitter:description" content="GitHub user or repo → visual builder fingerprint + agent-ready context pack." />
     <meta name="twitter:image" content="https://devprint.dev/og-default.svg" />
+    <style>
+      #dpLoader{display:none;position:fixed;inset:0;z-index:99999;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,ui-sans-serif,system-ui;color:#fff}
+      html.dp-booting #dpLoader{display:flex}
+      .dpL-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(124,92,255,.32),transparent 40%),radial-gradient(ellipse at 75% 80%,rgba(49,217,255,.24),transparent 45%),linear-gradient(180deg,#070913 0%,#0a0d18 60%,#070913 100%);z-index:-1}
+      .dpL-bg::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse at center,#000 30%,transparent 75%)}
+      .dpL-mark{width:88px;height:88px;border-radius:24px;background:conic-gradient(from 210deg,#31d9ff,#7c5cff,#ff5cc8,#ffd166,#62f0a7,#31d9ff);box-shadow:0 0 60px rgba(124,92,255,.5),inset 0 0 0 4px rgba(0,0,0,.3);animation:dpL-spin 2.4s linear infinite,dpL-pulse 2s ease-in-out infinite alternate;margin-bottom:30px;position:relative}
+      .dpL-mark::before{content:"";position:absolute;inset:14px;background:#070913;border-radius:14px}
+      .dpL-mark::after{content:"D";position:absolute;inset:14px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:34px;letter-spacing:-.05em;background:linear-gradient(135deg,#fff,#aaa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+      @keyframes dpL-spin{to{transform:rotate(360deg)}}
+      @keyframes dpL-pulse{from{box-shadow:0 0 50px rgba(124,92,255,.4),inset 0 0 0 4px rgba(0,0,0,.3)}to{box-shadow:0 0 90px rgba(255,92,200,.55),inset 0 0 0 4px rgba(0,0,0,.3)}}
+      .dpL-target{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#62f0a7;margin-bottom:10px;text-shadow:0 0 12px rgba(98,240,167,.5);min-height:1.4em}
+      .dpL-status{font-weight:700;font-size:18px;letter-spacing:-.01em;margin-bottom:24px;text-align:center;max-width:80vw;min-height:1.4em;transition:opacity .2s}
+      .dpL-bar{width:280px;max-width:80vw;height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;position:relative}
+      .dpL-bar::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);animation:dpL-shimmer 1.5s linear infinite;background-size:200% 100%}
+      @keyframes dpL-shimmer{from{background-position:-100% 0}to{background-position:100% 0}}
+      .dpL-fill{height:100%;background:linear-gradient(90deg,#31d9ff,#7c5cff,#ff5cc8);border-radius:99px;width:0%;transition:width .4s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 18px rgba(124,92,255,.5)}
+      .dpL-tip{margin-top:30px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#888;letter-spacing:.04em}
+      .dpL-tip kbd{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);padding:2px 6px;border-radius:4px;color:#fff;font-family:inherit;font-size:10px}
+      @keyframes dpL-out{from{opacity:1}to{opacity:0}}
+      #dpLoader.dpL-leaving{animation:dpL-out .35s ease-out forwards}
+      @media(prefers-reduced-motion:reduce){.dpL-mark{animation:dpL-pulse 3s ease-in-out infinite alternate}.dpL-bar::before{animation:none}}
+    </style>
+    <script>
+      (function () {
+        var p = (location.pathname || '').replace(/^\/agents\/?/, '').replace(/^\/+|\/+$/g, '');
+        if (p && p !== 'customise.html' && p.indexOf('prototypes') !== 0) {
+          document.documentElement.classList.add('dp-booting');
+          var t = document.getElementById('dpLTarget');
+          if (t) t.textContent = '▸ ' + p;
+        }
+      })();
+    </script>
   </head>
   <body>
+    <div id="dpLoader" aria-hidden="true">
+      <div class="dpL-bg"></div>
+      <div class="dpL-mark"></div>
+      <div class="dpL-target" id="dpLTarget"></div>
+      <div class="dpL-status" id="dpLStatus">Initialising…</div>
+      <div class="dpL-bar"><div class="dpL-fill" id="dpLFill"></div></div>
+      <div class="dpL-tip" id="dpLTip">tip · use <kbd>?style=letterhead</kbd> to switch view</div>
+    </div>
     <main id="app"></main>
+    <script>
+      (function () {
+        var t = document.getElementById('dpLTarget');
+        var p = (location.pathname || '').replace(/^\/agents\/?/, '').replace(/^\/+|\/+$/g, '');
+        if (t && p && p !== 'customise.html' && p.indexOf('prototypes') !== 0) {
+          t.textContent = '▸ ' + p;
+        }
+      })();
+    </script>
     <script type="module" src="/src/spa/main.ts"></script>
     <!-- Cookie-free 1x1 beacon. Counts page loads only; the SPA also fires
          a per-render event from main.ts so we see which profiles get hit. -->
