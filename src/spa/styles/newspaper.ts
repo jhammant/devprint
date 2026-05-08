@@ -1,6 +1,18 @@
 // v6 The Devprint Times — newspaper front page.
 
-import { escapeAttr, escapeHtml, relativeDate, topRepos, yearsActive, type ProfileData, type StyleRenderer } from './types.ts';
+import {
+  escapeAttr,
+  escapeHtml,
+  flashLabel,
+  linkedinShareUrl,
+  relativeDate,
+  saveAsPng,
+  topRepos,
+  tweetUrl,
+  yearsActive,
+  type ProfileData,
+  type StyleRenderer,
+} from './types.ts';
 
 export const newspaper: StyleRenderer = {
   id: 'newspaper',
@@ -81,7 +93,7 @@ body.style-newspaper{background:#1a1a1a;color:#111;font-family:'Old Standard TT'
       <span class="latin">Sine commit, nihil — nothing without commits</span>
       <span>£1.20 · Free Online</span>
     </div>
-    <h1 class="np-nameplate">The Devprint Times</h1>
+    <div class="np-nameplate" role="banner">The Devprint Times</div>
     <p class="np-tagline">All the public commits that are fit to print.</p>
     <div class="np-mast-bottom">
       <span>${escapeHtml(dateLong)}</span>
@@ -148,7 +160,7 @@ body.style-newspaper{background:#1a1a1a;color:#111;font-family:'Old Standard TT'
 
   ${tops.length ? `<h3 style="font-family:'Playfair Display',serif;font-weight:900;font-size:24px;letter-spacing:-.01em;margin:6px 0;border-bottom:1px solid #222;padding-bottom:6px">★ Top Releases &amp; What People Are Reading</h3>
   <div class="np-listings">
-    ${tops.map((r, i) => `<a class="np-listing" href="${escapeAttr(r.html_url)}" target="_blank" rel="noreferrer"><div class="lk">No. ${i + 1}${i === 0 ? ' · Best-Seller' : i === 2 ? ' · Editor\'s Pick' : ''}</div><h5>${escapeHtml(r.name)}</h5><p>${escapeHtml(r.description ?? 'Reviewed in this paper.').slice(0, 100)}</p><div class="meta">★ ${r.stargazers_count.toLocaleString()} · ${relativeDate(r.pushed_at ?? r.updated_at)}</div></a>`).join('')}
+    ${tops.map((r, i) => `<a class="np-listing" href="${escapeAttr(r.html_url)}" target="_blank" rel="noreferrer"><div class="lk">No. ${i + 1}${i === 0 ? ' · Best-Seller' : i === 2 ? ' · Editor\'s Pick' : ''}</div><h5>${escapeHtml(r.name)}</h5><p>${escapeHtml((r.description ?? 'Reviewed in this paper.').slice(0, 100))}</p><div class="meta">★ ${r.stargazers_count.toLocaleString()} · ${relativeDate(r.pushed_at ?? r.updated_at)}</div></a>`).join('')}
   </div>` : ''}
 
   <footer class="np-foot">
@@ -156,9 +168,39 @@ body.style-newspaper{background:#1a1a1a;color:#111;font-family:'Old Standard TT'
     <span>printed live · public data only · synced ${escapeHtml(new Date().toLocaleDateString('en-GB'))}</span>
   </footer>
 
+  <div class="np-share" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;border-top:1px solid #888;padding-top:14px">
+    <a class="np-btn" href="${escapeAttr(tweetUrl(`Today's edition of The Devprint Times: ${subjectName}. devprint.dev/${target}`))}" target="_blank" rel="noreferrer" style="font-family:'Special Elite',monospace;font-size:12px;padding:8px 14px;background:#a02828;color:#f4ead0;text-decoration:none;letter-spacing:.08em;text-transform:uppercase">↗ Tweet</a>
+    <a class="np-btn" href="${escapeAttr(linkedinShareUrl())}" target="_blank" rel="noreferrer" style="font-family:'Special Elite',monospace;font-size:12px;padding:8px 14px;background:#111;color:#f4ead0;text-decoration:none;letter-spacing:.08em;text-transform:uppercase">↗ LinkedIn</a>
+    <button class="np-btn" type="button" data-action="save-png" style="font-family:'Special Elite',monospace;font-size:12px;padding:8px 14px;background:transparent;color:#111;border:2px solid #111;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">📰 Save PNG</button>
+    <button class="np-btn" type="button" data-action="copy-link" style="font-family:'Special Elite',monospace;font-size:12px;padding:8px 14px;background:transparent;color:#111;border:2px solid #111;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">📋 Copy</button>
+  </div>
+
   <div class="np-stamp">PRESS<br>COPY<small>· ${escapeHtml(new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase())} ·</small></div>
 </article>
 `,
+      mount(root) {
+        const copyBtn = root.querySelector<HTMLButtonElement>('[data-action="copy-link"]');
+        const saveBtn = root.querySelector<HTMLButtonElement>('[data-action="save-png"]');
+        const news = root.querySelector<HTMLElement>('.np-news');
+        const onCopy = (e: Event) => {
+          e.preventDefault();
+          navigator.clipboard.writeText(location.href).catch(() => {});
+          if (copyBtn) flashLabel(copyBtn, '📋 COPIED');
+        };
+        const onSave = async (e: Event) => {
+          e.preventDefault();
+          if (!saveBtn || !news) return;
+          flashLabel(saveBtn, '⏳ Rendering…', 6000);
+          const ok = await saveAsPng(news, `devprint-news-${target.replace(/\W+/g, '-')}.png`, '#f4ead0');
+          flashLabel(saveBtn, ok ? '✓ SAVED' : '✗ FAILED');
+        };
+        copyBtn?.addEventListener('click', onCopy);
+        saveBtn?.addEventListener('click', onSave);
+        return () => {
+          copyBtn?.removeEventListener('click', onCopy);
+          saveBtn?.removeEventListener('click', onSave);
+        };
+      },
     };
   },
 };

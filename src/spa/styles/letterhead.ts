@@ -2,7 +2,19 @@
 // single red accent, double-rule dividers.
 
 import { BATTLE_FORMULAS } from '../../analysis/index.ts';
-import { escapeAttr, escapeHtml, relativeDate, topRepos, yearsActive, type ProfileData, type StyleRenderer } from './types.ts';
+import {
+  escapeAttr,
+  escapeHtml,
+  flashLabel,
+  linkedinShareUrl,
+  relativeDate,
+  saveAsPng,
+  topRepos,
+  tweetUrl,
+  yearsActive,
+  type ProfileData,
+  type StyleRenderer,
+} from './types.ts';
 
 export const letterhead: StyleRenderer = {
   id: 'letterhead',
@@ -32,7 +44,7 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
 .lh-topbar a{color:#666;text-decoration:none;border-bottom:1px dotted #999}
 .lh-head{display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:flex-start;padding-bottom:24px;border-bottom:6px double #111;margin-bottom:32px}
 .lh-head img{width:120px;height:120px;border-radius:0;border:1px solid #111;filter:contrast(1.05) saturate(.85);object-fit:cover}
-.lh-name{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:64px;letter-spacing:-.04em;line-height:.92;font-style:italic;font-variation-settings:"opsz" 144}
+.lh-name{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:clamp(36px,6.4vw,64px);letter-spacing:-.04em;line-height:.92;font-style:italic;font-variation-settings:"opsz" 144;word-break:break-word;margin:0}
 .lh-title-line{font-family:Fraunces,Georgia,serif;font-style:normal;font-weight:400;font-size:18px;color:#666;letter-spacing:0;margin-top:6px}
 .lh-meta{text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:#444;line-height:1.7;padding-top:8px}
 .lh-meta a{color:#c0392b;text-decoration:none}
@@ -80,6 +92,17 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
 .lh-stamp{position:absolute;bottom:48px;right:60px;color:rgba(192,57,43,.18);border:5px double rgba(192,57,43,.3);padding:14px 24px;font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:900;font-size:32px;letter-spacing:-.02em;transform:rotate(-12deg);pointer-events:none;line-height:1}
 .lh-stamp small{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;font-style:normal;font-weight:400;text-transform:uppercase;text-align:center;margin-top:4px;color:rgba(192,57,43,.4)}
 @media(max-width:740px){.lh-paper{padding:32px 24px}.lh-head{grid-template-columns:auto 1fr;gap:18px}.lh-meta{display:none}.lh-stats{grid-template-columns:repeat(2,1fr)}.lh-skill{grid-template-columns:100px 1fr 50px}}
+.lh-paper a:focus-visible,.lh-btn:focus-visible{outline:2px solid #c0392b;outline-offset:2px}
+@media print{
+  body.style-letterhead{background:#fff!important;padding:0;color:#000}
+  .lh-paper{box-shadow:none!important;padding:32px 36px;background:#fff}
+  .lh-paper::before,.lh-stamp,#dpStylePicker,.lh-cta{display:none!important}
+  .lh-foot{display:none}
+  .lh-head{break-inside:avoid}
+  .lh-paper h2{break-after:avoid}
+  .lh-repos li,.lh-skill,.lh-bat tr{break-inside:avoid}
+  a{color:#000;text-decoration:underline}
+}
 </style>
 
 <div class="lh-paper">
@@ -91,7 +114,7 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
   <header class="lh-head">
     <img src="${escapeAttr(profile.avatar_url)}" alt="" crossorigin="anonymous" />
     <div>
-      <div class="lh-name">${isRepo ? escapeHtml(repo!.full_name) : escapeHtml(profile.name || profile.login)}</div>
+      <h1 class="lh-name">${isRepo ? escapeHtml(repo!.full_name) : escapeHtml(profile.name || profile.login)}</h1>
       <div class="lh-title-line">${titleLine}</div>
     </div>
     <div class="lh-meta">
@@ -147,8 +170,11 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
       <p>Send the link to a hiring manager. It updates automatically from public GitHub data — no resume to maintain, no LinkedIn polish, no buzzword bingo.</p>
     </div>
     <div class="lh-buttons">
-      <a class="lh-btn" href="#" data-action="copy-link">Copy link</a>
-      <a class="lh-btn outline" href="#" data-action="print">Print as PDF</a>
+      <a class="lh-btn" href="${escapeAttr(linkedinShareUrl())}" target="_blank" rel="noreferrer">Share on LinkedIn</a>
+      <a class="lh-btn outline" href="${escapeAttr(tweetUrl(`A printable Devprint CV — ${escapeHtml(archetype)}. devprint.dev/${target}`))}" target="_blank" rel="noreferrer">Tweet</a>
+      <button class="lh-btn outline" type="button" data-action="save-png">Save PNG</button>
+      <button class="lh-btn outline" type="button" data-action="copy-link">Copy link</button>
+      <button class="lh-btn outline" type="button" data-action="print">Print as PDF</button>
     </div>
   </div>
 
@@ -161,18 +187,31 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
 </div>
 `,
       mount(root) {
-        root.querySelector('[data-action="copy-link"]')?.addEventListener('click', (e) => {
+        const copyBtn = root.querySelector<HTMLButtonElement>('[data-action="copy-link"]');
+        const saveBtn = root.querySelector<HTMLButtonElement>('[data-action="save-png"]');
+        const printBtn = root.querySelector<HTMLButtonElement>('[data-action="print"]');
+        const paper = root.querySelector<HTMLElement>('.lh-paper');
+        const onCopy = (e: Event) => {
           e.preventDefault();
-          navigator.clipboard.writeText(location.href);
-          const t = e.currentTarget as HTMLElement;
-          const o = t.textContent ?? '';
-          t.textContent = 'Copied';
-          setTimeout(() => (t.textContent = o), 1200);
-        });
-        root.querySelector('[data-action="print"]')?.addEventListener('click', (e) => {
+          navigator.clipboard.writeText(location.href).catch(() => {});
+          if (copyBtn) flashLabel(copyBtn, 'Copied');
+        };
+        const onSave = async (e: Event) => {
           e.preventDefault();
-          window.print();
-        });
+          if (!saveBtn || !paper) return;
+          flashLabel(saveBtn, 'Rendering…', 6000);
+          const ok = await saveAsPng(paper, `devprint-cv-${target.replace(/\W+/g, '-')}.png`, '#f5f1e8');
+          flashLabel(saveBtn, ok ? 'Saved' : 'Failed');
+        };
+        const onPrint = (e: Event) => { e.preventDefault(); window.print(); };
+        copyBtn?.addEventListener('click', onCopy);
+        saveBtn?.addEventListener('click', onSave);
+        printBtn?.addEventListener('click', onPrint);
+        return () => {
+          copyBtn?.removeEventListener('click', onCopy);
+          saveBtn?.removeEventListener('click', onSave);
+          printBtn?.removeEventListener('click', onPrint);
+        };
       },
     };
   },

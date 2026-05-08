@@ -1,7 +1,20 @@
 // v1 Trading Card — Top-Trumps × Pokémon. Pure black, neon palette,
 // scan-line CRT overlay, big tier badge, isometric repo tower.
 
-import { escapeAttr, escapeHtml, relativeDate, shortStars, topRepos, yearsActive, type ProfileData, type StyleRenderer } from './types.ts';
+import {
+  escapeAttr,
+  escapeHtml,
+  flashLabel,
+  linkedinShareUrl,
+  relativeDate,
+  saveAsPng,
+  shortStars,
+  topRepos,
+  tweetUrl,
+  yearsActive,
+  type ProfileData,
+  type StyleRenderer,
+} from './types.ts';
 
 export const tradingCard: StyleRenderer = {
   id: 'trading-card',
@@ -26,6 +39,11 @@ export const tradingCard: StyleRenderer = {
         <div class="tc-blbl">${escapeHtml(r.name)}<span>★ ${shortStars(r.stargazers_count)}</span></div>
       </a>`;
     }).join('');
+    const tweetText = `My Devprint card: ${archetype} (${battle.tier}). See yours: devprint.dev/${target}`;
+    // Hide the "OPEN" ribbon on repo pages (where it makes no sense) and on
+    // user pages, soften the copy from "★ HIRE ME" to a calmer "OPEN" — the
+    // recruiter persona flagged the louder version as desperation.
+    const ribbon = isRepo ? '' : '<div class="tc-ribbon">★ OPEN</div>';
 
     return {
       html: `
@@ -41,8 +59,10 @@ body.style-trading-card::after{content:"";position:fixed;inset:0;background:radi
 .tc-arche{font-family:'Press Start 2P',monospace;font-size:10px;color:#00f0ff;text-shadow:0 0 8px rgba(0,240,255,.6);margin-bottom:6px;letter-spacing:.05em}
 .tc-name{font-size:30px;font-weight:900;letter-spacing:-.04em;line-height:1.05}
 .tc-handle{color:#888;font-size:13px;margin-top:4px;font-family:'JetBrains Mono',monospace}
-.tc-tier{font-family:'Press Start 2P',monospace;font-size:13px;background:linear-gradient(135deg,${tierColor},#ff7e3a);color:#1a0a00;padding:10px 14px;border-radius:8px;box-shadow:0 0 20px ${tierColor}b3;text-shadow:0 1px 0 rgba(255,255,255,.3);animation:tc-pulse 2.4s ease-in-out infinite}
-@keyframes tc-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.tc-tier{font-family:'Press Start 2P',monospace;font-size:13px;background:linear-gradient(135deg,${tierColor},#ff7e3a);color:#1a0a00;padding:10px 14px;border-radius:8px;box-shadow:0 0 20px ${tierColor}b3;text-shadow:0 1px 0 rgba(255,255,255,.3);animation:tc-pulse 4.8s ease-in-out infinite}
+@keyframes tc-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+@media(prefers-reduced-motion:reduce){.tc-tier{animation:none}}
+.tc-card a:focus-visible,.tc-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .tc-portrait{display:flex;align-items:center;gap:18px;padding:24px;border-bottom:2px dashed ${tierColor}3f}
 .tc-avatar{width:96px;height:96px;border-radius:8px;border:3px solid ${tierColor};box-shadow:0 0 24px ${tierColor}66;background:#222;flex-shrink:0;object-fit:cover}
 .tc-tag{color:#ddd;font-size:14px;line-height:1.5;font-style:italic}
@@ -80,8 +100,8 @@ body.style-trading-card::after{content:"";position:fixed;inset:0;background:radi
 </style>
 
 <div class="tc-wrap">
-  <article class="tc-card">
-    <div class="tc-ribbon">★ HIRE ME</div>
+  <article class="tc-card" id="tcCard">
+    ${ribbon}
     <div class="tc-head">
       <div>
         <div class="tc-arche">▸ ${escapeHtml(archetype.toUpperCase())}${yrs ? ` · LV ${Math.min(99, yrs * 4)}` : ''}</div>
@@ -121,9 +141,10 @@ body.style-trading-card::after{content:"";position:fixed;inset:0;background:radi
 
     <div class="tc-cta">
       <div class="tc-cta-l">▶ SHARE THIS CARD AS YOUR LIVING CV</div>
-      <a class="tc-btn" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`My Devprint card: ${archetype} (${battle.tier}). See yours: devprint.dev/${target}`)}" target="_blank" rel="noreferrer">↗ TWEET</a>
-      <a class="tc-btn cyan" href="#" data-action="copy-link">📋 COPY</a>
-      <a class="tc-btn pink" href="#" data-action="save-png">📥 PDF</a>
+      <a class="tc-btn" href="${escapeAttr(tweetUrl(tweetText))}" target="_blank" rel="noreferrer">↗ TWEET</a>
+      <a class="tc-btn pink" href="${escapeAttr(linkedinShareUrl())}" target="_blank" rel="noreferrer">↗ LINKEDIN</a>
+      <button class="tc-btn cyan" type="button" data-action="save-png">📥 SAVE PNG</button>
+      <button class="tc-btn" type="button" data-action="copy-link" style="background:#62f0a7">📋 COPY</button>
     </div>
 
     <div class="tc-foot">
@@ -134,13 +155,27 @@ body.style-trading-card::after{content:"";position:fixed;inset:0;background:radi
 </div>
 `,
       mount(root) {
-        // Hook the action buttons up to the existing SPA functions.
-        root.querySelector('[data-action="copy-link"]')?.addEventListener('click', (e) => {
+        const copyBtn = root.querySelector<HTMLButtonElement>('[data-action="copy-link"]');
+        const saveBtn = root.querySelector<HTMLButtonElement>('[data-action="save-png"]');
+        const card = root.querySelector<HTMLElement>('#tcCard');
+        const onCopy = (e: Event) => {
           e.preventDefault();
-          navigator.clipboard.writeText(location.href);
-          (e.currentTarget as HTMLElement).textContent = '📋 COPIED';
-          setTimeout(() => ((e.currentTarget as HTMLElement).textContent = '📋 COPY'), 1200);
-        });
+          navigator.clipboard.writeText(location.href).catch(() => {});
+          if (copyBtn) flashLabel(copyBtn, '📋 COPIED');
+        };
+        const onSave = async (e: Event) => {
+          e.preventDefault();
+          if (!saveBtn || !card) return;
+          flashLabel(saveBtn, '⏳ RENDERING…', 6000);
+          const ok = await saveAsPng(card, `devprint-card-${target.replace(/\W+/g, '-')}.png`, '#000');
+          flashLabel(saveBtn, ok ? '✓ SAVED' : '✗ FAILED');
+        };
+        copyBtn?.addEventListener('click', onCopy);
+        saveBtn?.addEventListener('click', onSave);
+        return () => {
+          copyBtn?.removeEventListener('click', onCopy);
+          saveBtn?.removeEventListener('click', onSave);
+        };
       },
     };
   },

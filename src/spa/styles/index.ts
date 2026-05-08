@@ -2,10 +2,16 @@
 // `null` because the existing SPA flow handles it; the rest are alternate
 // takeover renderers that replace the result section's HTML.
 
+import { arcade } from './arcade.ts';
+import { boardingpass } from './boardingpass.ts';
 import { holofoil } from './holofoil.ts';
 import { letterhead } from './letterhead.ts';
+import { magazine } from './magazine.ts';
 import { newspaper } from './newspaper.ts';
+import { receipt } from './receipt.ts';
+import { subway } from './subway.ts';
 import { tradingCard } from './trading-card.ts';
+import { vinyl } from './vinyl.ts';
 import type { StyleId, StyleRenderer } from './types.ts';
 
 export const STYLES: Record<Exclude<StyleId, 'default'>, StyleRenderer> = {
@@ -13,6 +19,12 @@ export const STYLES: Record<Exclude<StyleId, 'default'>, StyleRenderer> = {
   letterhead,
   holofoil,
   newspaper,
+  boardingpass,
+  receipt,
+  vinyl,
+  magazine,
+  arcade,
+  subway,
 };
 
 export const STYLE_LIST: ReadonlyArray<{ id: StyleId; name: string; blurb: string }> = [

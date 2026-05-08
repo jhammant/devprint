@@ -159,24 +159,25 @@
     });
     useBtn.addEventListener('click', () => {
       const s = styles[active];
-      // Map prototype slug → live-SPA style id. Only a subset of prototypes
-      // are wired to live data so far; the rest preview but show an alert.
+      // Map prototype slug → live-SPA style id. Every prototype is now wired.
       const liveStyles = {
-        'v1-arcade': 'trading-card',
+        'v1-arcade': 'arcade',
         'v2-letterhead': 'letterhead',
+        'v3-holo': 'holofoil',
         'v4-holofoil': 'holofoil',
+        'v5-magazine': 'magazine',
         'v6-newspaper': 'newspaper',
+        'v7-boardingpass': 'boardingpass',
+        'v8-vinyl': 'vinyl',
+        'v9-subway': 'subway',
+        'v10-receipt': 'receipt',
       };
-      const liveId = liveStyles[s.id];
-      if (liveId) {
-        const u = prompt(
-          'Apply "' + s.name + '" to which GitHub user or repo?\n(e.g. sindresorhus, jhammant, facebook/react)',
-          'sindresorhus'
-        );
-        if (u) location.href = '/' + u.replace(/^\//, '') + '?style=' + liveId;
-      } else {
-        alert('"' + s.name + '" is still a static prototype — only v1, v2, v4, and v6 are wired to live profile data so far. Pick one of those to apply to a real profile.');
-      }
+      const liveId = liveStyles[s.id] || 'trading-card';
+      const u = prompt(
+        'Apply "' + s.name + '" to which GitHub user or repo?\n(e.g. sindresorhus, jhammant, facebook/react)',
+        'sindresorhus'
+      );
+      if (u) location.href = '/' + u.replace(/^\//, '') + '?style=' + liveId;
     });
 
     // Boot from hash if present

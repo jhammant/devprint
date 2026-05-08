@@ -35,7 +35,13 @@ export type StyleId =
   | 'trading-card'
   | 'letterhead'
   | 'holofoil'
-  | 'newspaper';
+  | 'newspaper'
+  | 'boardingpass'
+  | 'receipt'
+  | 'vinyl'
+  | 'magazine'
+  | 'arcade'
+  | 'subway';
 
 export type StyleRenderer = {
   id: StyleId;
@@ -43,8 +49,16 @@ export type StyleRenderer = {
   name: string;
   /** One-line subtitle for the picker dropdown. */
   blurb: string;
-  /** Returns the HTML for the result section + optional post-render hook. */
-  render(data: ProfileData): { html: string; mount?: (root: HTMLElement) => void };
+  /**
+   * Returns the HTML for the result section + optional post-render hook.
+   * `mount()` may return an `unmount` function — used by the dispatcher to
+   * tear down event listeners (mousemove etc.) when the user picks another
+   * style without a full page reload.
+   */
+  render(data: ProfileData): {
+    html: string;
+    mount?: (root: HTMLElement) => void | (() => void);
+  };
   /** Whether the renderer should hide the SPA's default search/nav chrome. */
   takeover?: boolean;
 };
@@ -93,4 +107,53 @@ export function yearsActive(repos: readonly GhRepo[]): number | undefined {
     .sort((a, b) => a - b)[0];
   const years = Math.max(1, Math.floor((Date.now() - earliestUpdated) / (365.25 * 86_400_000)));
   return years;
+}
+
+/** Build a LinkedIn share URL pointing at the current devprint URL. */
+export function linkedinShareUrl(href: string = location.href): string {
+  return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(href)}`;
+}
+
+/** Build a Twitter/X share intent URL with text + the current devprint URL. */
+export function tweetUrl(text: string, href: string = location.href): string {
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(href)}`;
+}
+
+/**
+ * Render the given DOM node to a PNG and trigger a download. Used by every
+ * style renderer's "Save PNG" CTA so the artefact can be shared as an image
+ * (otherwise the OS-screenshot tax kills polish + crops the picker into the
+ * frame).
+ */
+export async function saveAsPng(
+  node: HTMLElement | null,
+  filename = 'devprint.png',
+  background = '#0a0d18',
+): Promise<boolean> {
+  if (!node) return false;
+  const { toPng } = await import('html-to-image');
+  try {
+    const dataUrl = await toPng(node, {
+      pixelRatio: 2,
+      backgroundColor: background,
+      cacheBust: true,
+      style: { transform: 'none' },
+    });
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Helpers to flash a label on a CTA element after click. */
+export function flashLabel(el: HTMLElement, msg: string, ms = 1200): void {
+  const original = el.textContent ?? '';
+  el.textContent = msg;
+  setTimeout(() => (el.textContent = original), ms);
 }

@@ -67,6 +67,13 @@ const app = document.querySelector<HTMLDivElement>('#app')!;
 let currentMode: Mode = location.hostname.startsWith('agents.') || location.pathname.startsWith('/agents/') ? 'agent' : 'human';
 let lastPack = '';
 
+// In-place style switch state. After a successful build() we cache the
+// resolved ProfileData so the picker can re-render under a different
+// renderer without a full page reload (or another GitHub round-trip).
+let lastProfileData: ProfileData | null = null;
+let lastStyleUnmount: (() => void) | null = null;
+let lastTarget = '';
+
 app.innerHTML = `
 <div class="wrap">
   <nav class="nav"><div class="brand"><div class="mark"></div><span id="brandText">Devprint</span></div><div class="navlinks"><button class="modebtn" id="humanMode" type="button">Show-off card</button><button class="modebtn" id="agentMode" type="button">Agent pack</button><div class="pill">GitHub user or repo → useful artefact</div></div></nav>
@@ -154,36 +161,31 @@ async function build(raw: string, scroll = true) {
     const styleQuery = renderer ? `?style=${renderer.id}` : '';
     history.replaceState(null, '', `${currentMode === 'agent' ? `/agents/${target}` : `/${target}`}${styleQuery}`);
 
+    setLoaderStatus(`Pulling agent pack + insights from Lambda…`, 70);
+    const [packResult, insights] = await Promise.all([
+      fetchAgentPack(target).catch(() => undefined),
+      fetchInsights(target),
+    ]);
+    lastPack = packResult ?? `# Devprint Agent Pack: ${target}\n\nThe agent pack endpoint is currently unreachable. Try again in a moment.\n`;
+    setLoaderStatus('Drawing the card…', 92);
+
+    const data: ProfileData = {
+      profile, repo, isRepo, repos, topLangs, langs, themes, archetype: arch,
+      totalStars, battle, ...(insights ? { insights } : {}), pack: lastPack, target,
+    };
+    lastProfileData = data;
+    lastTarget = target;
+
     if (renderer) {
-      // Hide the default chrome — the renderer takes over.
-      setLoaderStatus(`Loading "${renderer.name}" view · pulling agent pack + insights…`, 70);
-      const wrap = document.querySelector<HTMLElement>('.wrap');
-      const [packResult, insights] = await Promise.all([
-        fetchAgentPack(target).catch(() => undefined),
-        fetchInsights(target),
-      ]);
-      lastPack = packResult ?? '';
-      setLoaderStatus(`Rendering ${renderer.name.toLowerCase()}…`, 92);
-      const data: ProfileData = {
-        profile, repo, isRepo, repos, topLangs, langs, themes, archetype: arch,
-        totalStars, battle, ...(insights ? { insights } : {}), pack: lastPack, target,
-      };
-      const out = renderer.render(data);
-      document.body.classList.add('style-takeover', `style-${renderer.id}`);
-      if (wrap) wrap.style.display = 'none';
-      let host = document.getElementById('styleHost');
-      if (!host) {
-        host = document.createElement('div');
-        host.id = 'styleHost';
-        document.body.appendChild(host);
-      }
-      host.innerHTML = out.html + renderStylePicker(renderer.id, target, currentMode);
-      out.mount?.(host);
-      wireStylePicker(host, target, currentMode);
+      mountStyle(renderer, data);
       hideLoader();
       ($('go') as HTMLButtonElement).disabled = false;
       return;
     }
+
+    // Default-view rendering — body/wrap chrome restored, card panels filled in.
+    unmountAnyStyle();
+    document.querySelector<HTMLElement>('.wrap')!.style.display = '';
 
     renderProfile(profile, repo, isRepo, totalStars, arch, themes, repos, topLangs);
     renderBattleCard(battle, isRepo);
@@ -198,17 +200,6 @@ async function build(raw: string, scroll = true) {
       renderInsights(profile, repos, totalStars);
     }
 
-    setLoaderStatus('Pulling agent pack + insights from Lambda…', 70);
-    // Fetch the agent pack + structured insights from the Lambda in parallel.
-    // The Lambda has a server-side GitHub token + CloudFront cache; doing
-    // this client-side would double our GitHub-API calls per render against
-    // the unauth 60/hr-per-IP ceiling.
-    const [packResult, insights] = await Promise.all([
-      fetchAgentPack(target).catch(() => undefined),
-      fetchInsights(target),
-    ]);
-    setLoaderStatus('Drawing the card…', 92);
-    lastPack = packResult ?? `# Devprint Agent Pack: ${target}\n\nThe agent pack endpoint is currently unreachable. Try again in a moment.\n`;
     $('agentPack').textContent = lastPack;
 
     renderStack(insights, isRepo, owner);
@@ -307,11 +298,12 @@ function showLoader(target: string): void {
   if (targetEl) targetEl.textContent = `▸ ${target}`;
   // Rotating tips while we wait.
   const tips = [
-    'tip · share with <kbd>?style=letterhead</kbd> for a printed CV view',
-    'tip · <kbd>?style=trading-card</kbd> turns it into a Top-Trumps card',
-    'tip · <kbd>?style=holofoil</kbd> tilts the card to your mouse',
-    'tip · click <kbd>all 10 →</kbd> to see every prototype',
-    'tip · the agent pack at <kbd>/&lt;user&gt;.md</kbd> is what AI agents read',
+    'tip · top-right picker switches between 10 different styles',
+    'tip · <kbd>?style=letterhead</kbd> is a printable CV',
+    'tip · <kbd>?style=holofoil</kbd> tilts to your mouse',
+    'tip · <kbd>?style=receipt</kbd> screenshots well for IG stories',
+    'tip · <kbd>?style=vinyl</kbd> turns your portfolio into an LP',
+    'tip · <kbd>/&lt;user&gt;.md</kbd> is the agent context pack',
   ];
   const tipEl = document.getElementById('dpLTip');
   if (tipEl) {
@@ -813,12 +805,12 @@ function escapeXml(s: string): string {
 
 // ---- style picker (floats top-right, swaps view via ?style=) ---------------
 
-function renderStylePicker(currentId: string, target: string, mode: Mode): string {
+function renderStylePicker(currentId: string, _target: string, _mode: Mode): string {
   const opts = STYLE_LIST.map((s) => `<option value="${s.id}"${s.id === currentId ? ' selected' : ''}>${s.name}</option>`).join('');
-  return `<div id="dpStylePicker" style="position:fixed;top:14px;right:14px;z-index:10000;display:flex;gap:8px;align-items:center;background:rgba(15,15,15,.85);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);padding:7px 10px;border-radius:999px;font-family:Inter,ui-sans-serif,system-ui;font-size:12px;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-    <span style="color:#888;letter-spacing:.04em">style</span>
-    <select id="dpStyleSel" data-target="${target}" data-mode="${mode}" style="background:transparent;color:#fff;border:0;outline:0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding-right:4px">${opts}</select>
-    <a href="/prototypes/" title="See all 10 prototypes" style="color:#62f0a7;text-decoration:none;font-size:11px;letter-spacing:.04em;border-left:1px solid rgba(255,255,255,.15);padding-left:8px">all 10 →</a>
+  return `<div id="dpStylePicker" style="position:fixed;top:14px;right:14px;z-index:10000;display:flex;gap:8px;align-items:center;background:rgba(15,15,15,.88);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);padding:7px 12px;border-radius:999px;font-family:Inter,ui-sans-serif,system-ui;font-size:12px;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.45)">
+    <label for="dpStyleSel" style="color:#888;letter-spacing:.04em">style</label>
+    <select id="dpStyleSel" aria-label="Pick a Devprint card style" style="background:transparent;color:#fff;border:0;outline:0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding-right:4px">${opts}</select>
+    <a href="/prototypes/" title="See the full gallery" style="color:#62f0a7;text-decoration:none;font-size:11px;letter-spacing:.04em;border-left:1px solid rgba(255,255,255,.15);padding-left:10px">gallery →</a>
   </div>`;
 }
 
@@ -826,10 +818,96 @@ function wireStylePicker(root: ParentNode, target: string, mode: Mode): void {
   const sel = root.querySelector<HTMLSelectElement>('#dpStyleSel');
   if (!sel) return;
   sel.addEventListener('change', () => {
-    const v = sel.value;
-    const path = mode === 'agent' ? `/agents/${target}` : `/${target}`;
-    location.href = v === 'default' ? path : `${path}?style=${v}`;
+    applyStyle(sel.value, target, mode);
   });
+}
+
+/**
+ * Tear down any active style takeover: run the renderer's unmount, drop the
+ * style host's content, and clear the body class flags. Called before any
+ * new style takes over (or before the default view re-mounts).
+ */
+function unmountAnyStyle(): void {
+  if (lastStyleUnmount) {
+    try { lastStyleUnmount(); } catch { /* ignore */ }
+    lastStyleUnmount = null;
+  }
+  // Drop every style-* and the takeover marker — without this, switching
+  // default → A → default → B leaves stale `body.style-A` rules on the page
+  // (background colours / fonts / etc. all bleed through).
+  const cls = Array.from(document.body.classList);
+  for (const c of cls) {
+    if (c.startsWith('style-') || c === 'style-takeover') document.body.classList.remove(c);
+  }
+  const host = document.getElementById('styleHost');
+  if (host) host.innerHTML = '';
+}
+
+/**
+ * Mount a renderer in place. Idempotent — call repeatedly when the user
+ * picks a different style and we'll tear down the previous one first. Also
+ * applies a brief opacity fade so the swap doesn't flash.
+ */
+function mountStyle(renderer: import('./styles/index.ts').StyleRenderer, data: ProfileData): void {
+  unmountAnyStyle();
+  const wrap = document.querySelector<HTMLElement>('.wrap');
+  if (wrap) wrap.style.display = 'none';
+  document.body.classList.add('style-takeover', `style-${renderer.id}`);
+  let host = document.getElementById('styleHost');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'styleHost';
+    document.body.appendChild(host);
+  }
+  // Quick fade-in so the swap reads as a transition, not a snap.
+  host.style.opacity = '0';
+  host.style.transition = 'opacity .22s ease-out';
+  const out = renderer.render(data);
+  host.innerHTML = out.html + renderStylePicker(renderer.id, lastTarget || data.target, currentMode);
+  const ret = out.mount?.(host);
+  lastStyleUnmount = typeof ret === 'function' ? ret : null;
+  wireStylePicker(host, lastTarget || data.target, currentMode);
+  // next frame so the browser commits opacity:0 before transitioning to 1.
+  requestAnimationFrame(() => requestAnimationFrame(() => { host!.style.opacity = '1'; }));
+}
+
+/**
+ * Pick a different style (or 'default') in place — no full page reload, no
+ * GitHub round-trip. Triggered from the picker dropdown.
+ */
+function applyStyle(id: string, target: string, mode: Mode): void {
+  // Update the URL silently so a refresh / share preserves the chosen style.
+  const path = mode === 'agent' ? `/agents/${target}` : `/${target}`;
+  const newUrl = id === 'default' || !id ? path : `${path}?style=${id}`;
+  history.replaceState(null, '', newUrl);
+
+  if (!lastProfileData) {
+    // Cold start (e.g. user landed via picker postMessage from elsewhere) —
+    // fall back to a normal build, which will re-fetch and re-render.
+    build(target, false);
+    return;
+  }
+
+  const renderer = getStyle(id);
+  if (renderer) {
+    mountStyle(renderer, lastProfileData);
+    return;
+  }
+
+  // Switch to the default dashboard view. Fade the styleHost out, then
+  // unmount and bring the .wrap chrome back. We don't have a "re-render
+  // dashboard from cached data" helper today, so re-run build() — it skips
+  // a real network round-trip when the GitHub fetch is cached client-side.
+  const host = document.getElementById('styleHost');
+  if (host) {
+    host.style.transition = 'opacity .18s ease-out';
+    host.style.opacity = '0';
+  }
+  setTimeout(() => {
+    unmountAnyStyle();
+    document.querySelector<HTMLElement>('.wrap')!.style.display = '';
+    build(target, false);
+  }, 180);
 }
 
 // ── stack / commit-style / heatmap renderers (data from /target.json sidecar) ──
