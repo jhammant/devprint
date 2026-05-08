@@ -1,5 +1,4 @@
 import './styles.css';
-import { toPng } from 'html-to-image';
 import {
   BATTLE_FORMULAS,
   archetype,
@@ -1309,6 +1308,7 @@ $('copyAgent').onclick = async () => {
 async function captureCard(): Promise<Blob | null> {
   const node = document.querySelector<HTMLElement>('aside.card');
   if (!node) return null;
+  const { toPng } = await import('html-to-image');
   // Render at 2x for crisp image; transparent bg lets the gradient show on dark surfaces.
   const dataUrl = await toPng(node, {
     pixelRatio: 2,
