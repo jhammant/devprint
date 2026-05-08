@@ -62,23 +62,23 @@
   <h1>Customise your <em>Devprint</em>.</h1>
   <p class="lead">Public GitHub data only gets you 80% of the way to a useful CV. The remaining 20% — your tagline, what you're available for, your story — comes from a small JSON file in your own GitHub. Three minutes.</p>
 
-  <h2>The fastest path · use our template</h2>
+  <h2>How it works · three steps</h2>
 
   <div class="step">
     <div class="step-num">1</div>
     <div class="step-body">
-      <h3>Click "Use this template" on our repo</h3>
-      <p>Creates a clean copy at <code>&lt;you&gt;/devprint</code>. No fork lineage to manage; you own the new repo outright.</p>
-      <a class="cta" href="https://github.com/new?template_owner=jhammant&template_name=devprint" target="_blank" rel="noreferrer">Use this template →</a>
-      <a class="cta ghost" href="https://github.com/jhammant/devprint/tree/main/template" target="_blank" rel="noreferrer">Or browse the template files</a>
+      <h3>Fork our template</h3>
+      <p>Creates <code>&lt;you&gt;/devprint-template</code> on your own GitHub. Keep it public so Devprint can read it.</p>
+      <a class="cta" href="https://github.com/jhammant/devprint-template/fork" target="_blank" rel="noreferrer">Fork devprint-template →</a>
+      <a class="cta ghost" href="https://github.com/new?template_owner=jhammant&template_name=devprint-template" target="_blank" rel="noreferrer">Or use as template (no fork lineage)</a>
     </div>
   </div>
 
   <div class="step">
     <div class="step-num">2</div>
     <div class="step-body">
-      <h3>Edit <code>devprint.json</code> in your new repo</h3>
-      <p>Open the file in GitHub's web editor — no clone needed. Replace the placeholder values with yours, save, commit. Every field is optional.</p>
+      <h3>Edit <code>devprint.json</code></h3>
+      <p>Open the file in GitHub's web editor — no clone needed. Replace the placeholder values with yours, commit. Every field is optional, fill in only what you care about.</p>
     </div>
   </div>
 
@@ -86,17 +86,10 @@
     <div class="step-num">3</div>
     <div class="step-body">
       <h3>Visit <code>devprint.dev/&lt;your-username&gt;</code></h3>
-      <p>Your card now reads from <code>&lt;you&gt;/devprint/devprint.json</code>. Changes propagate within ~5 minutes (CloudFront cache).</p>
-      <p>Want it instant? Force a refresh by appending <code>?style=letterhead</code> — that bypasses the SPA's local cache.</p>
+      <p>Your card now reads from <code>&lt;you&gt;/devprint-template/devprint.json</code>. Changes propagate within ~5 minutes (CloudFront cache).</p>
+      <p>Force a refresh by appending <code>?style=letterhead</code> — bypasses the SPA's local cache.</p>
     </div>
   </div>
-
-  <h2>Already have a config repo?</h2>
-  <p>If you already maintain <code>&lt;you&gt;/.github</code> (the standard "GitHub config" repo many maintainers have), drop the same <code>devprint.json</code> there and we'll find it. Search order:</p>
-  <pre><span class="com">// First match wins.</span>
-<span class="key">1.</span> <span class="str">"&lt;you&gt;/.github/devprint.json"</span>
-<span class="key">2.</span> <span class="str">"&lt;you&gt;/&lt;you&gt;/devprint.json"</span>  <span class="com">// profile-readme repo</span>
-<span class="key">3.</span> <span class="str">"&lt;you&gt;/devprint/devprint.json"</span>  <span class="com">// our template</span></pre>
 
   <h2>What you can put in it</h2>
   <div class="grid-2">

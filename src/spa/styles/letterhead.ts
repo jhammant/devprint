@@ -261,15 +261,15 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
     <div>
       <h3 style="font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:900;font-size:22px;color:#c0392b">Is this you? Customise your Devprint.</h3>
       <p style="font-size:13px;color:#444;margin-top:6px;max-width:60ch;font-family:Inter,sans-serif">
-        Add a tagline, what you're available for, your career history, talks, writing, and endorsements. Devprint reads
-        a small JSON file from <code style="font-family:'JetBrains Mono',monospace;background:#fff;border:1px solid #c9bfa3;padding:1px 6px">${escapeHtml(profile.login)}/.github/devprint.json</code>,
-        <code style="font-family:'JetBrains Mono',monospace;background:#fff;border:1px solid #c9bfa3;padding:1px 6px">${escapeHtml(profile.login)}/${escapeHtml(profile.login)}/devprint.json</code>, or
-        the easiest path — fork our template repo to <code style="font-family:'JetBrains Mono',monospace;background:#fff;border:1px solid #c9bfa3;padding:1px 6px">${escapeHtml(profile.login)}/devprint</code>.
+        Add a tagline, what you're available for, your career history, talks, writing, and endorsements.
+        Fork <a href="https://github.com/jhammant/devprint-template" target="_blank" rel="noreferrer" style="color:#c0392b">jhammant/devprint-template</a>,
+        edit <code style="font-family:'JetBrains Mono',monospace;background:#fff;border:1px solid #c9bfa3;padding:1px 6px">devprint.json</code>,
+        push. Devprint reads from <code style="font-family:'JetBrains Mono',monospace;background:#fff;border:1px solid #c9bfa3;padding:1px 6px">${escapeHtml(profile.login)}/devprint-template/devprint.json</code> on your next render.
       </p>
     </div>
     <div class="lh-buttons" style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
-      <a class="lh-btn" href="/customise.html" style="text-align:center;background:#c0392b;color:#fff;border-color:#c0392b">Customise →</a>
-      <a class="lh-btn outline" href="https://github.com/jhammant/devprint/blob/main/docs/DEVPRINT_JSON.md" target="_blank" rel="noreferrer" style="text-align:center;background:transparent;color:#111;border-color:#111">Read the schema</a>
+      <a class="lh-btn" href="https://github.com/jhammant/devprint-template/fork" target="_blank" rel="noreferrer" style="text-align:center;background:#c0392b;color:#fff;border-color:#c0392b">Fork the template →</a>
+      <a class="lh-btn outline" href="/customise.html" style="text-align:center;background:transparent;color:#111;border-color:#111">How it works</a>
     </div>
   </div>` : ''}
 

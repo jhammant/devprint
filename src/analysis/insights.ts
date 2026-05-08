@@ -307,13 +307,11 @@ async function fetchProfileExtra(
   client: GhClient,
   owner: string,
 ): Promise<ProfileExtra | undefined> {
-  // Three locations checked in order. The third — `<owner>/devprint` — is
-  // what users get when they fork our template repo: cloning the template
-  // and editing one file is the lowest-friction path to a customised card.
+  // Single canonical location. Users fork jhammant/devprint-template (which
+  // keeps the name on fork) or click "Use this template" (which defaults to
+  // the same name), then edit devprint.json and push. One path, one story.
   const sources: Array<[string, string, string]> = [
-    [owner, '.github', 'devprint.json'],
-    [owner, owner, 'devprint.json'],
-    [owner, 'devprint', 'devprint.json'],
+    [owner, 'devprint-template', 'devprint.json'],
   ];
   for (const [o, r, p] of sources) {
     const file = await client.getRepoFile(o, r, p).catch(() => undefined);
