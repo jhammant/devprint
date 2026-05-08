@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Devprint — visual prototypes</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace;background:#0a0a0a;color:#fff;min-height:100vh;padding:64px 32px}
+    .wrap{max-width:1100px;margin:0 auto}
+    h1{font-family:Inter,ui-sans-serif,system-ui;font-size:clamp(40px,7vw,72px);font-weight:900;letter-spacing:-.05em;line-height:.95;margin-bottom:18px;background:linear-gradient(135deg,#fff,#999);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .lead{font-size:17px;line-height:1.6;color:#999;max-width:680px;margin-bottom:48px;font-family:Inter,ui-sans-serif,system-ui}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px;margin-bottom:48px}
+    .card{background:#111;border:1px solid #222;border-radius:16px;padding:0;overflow:hidden;transition:transform .2s ease,border-color .2s ease;text-decoration:none;color:inherit;display:block}
+    .card:hover{transform:translateY(-4px);border-color:#444}
+    .preview{height:200px;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;letter-spacing:-.04em;font-family:Inter,ui-sans-serif,system-ui}
+    .body{padding:20px 22px;border-top:1px solid #222}
+    .name{font-family:Inter,ui-sans-serif,system-ui;font-weight:900;font-size:21px;letter-spacing:-.02em;margin-bottom:6px}
+    .desc{color:#999;font-size:13px;line-height:1.5;font-family:Inter,ui-sans-serif,system-ui}
+    .tag{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.16em;padding:3px 8px;border-radius:4px;margin-top:12px;font-weight:700}
+    /* V1 trading card preview */
+    .preview-1{background:radial-gradient(ellipse at top,#1a0633 0%,#000 100%);position:relative;color:#fff;font-family:'Press Start 2P',monospace;font-size:24px}
+    .preview-1::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(255,255,255,.04) 3px,rgba(255,255,255,.04) 4px);pointer-events:none}
+    .preview-1 span{background:linear-gradient(135deg,#ffd166,#ff5cc8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:38px;font-weight:900;letter-spacing:-.03em;font-family:Inter,ui-sans-serif,system-ui;text-shadow:0 0 20px rgba(255,209,102,.5);position:relative}
+    /* V2 letterhead preview */
+    .preview-2{background:#f5f1e8;color:#111;font-family:'Times New Roman',Georgia,serif;font-style:italic;font-size:36px;letter-spacing:-.02em;border-bottom:6px double #111;position:relative}
+    .preview-2 span{font-style:normal;font-weight:900;letter-spacing:-.04em}
+    /* V3 holo preview */
+    .preview-3{background:linear-gradient(135deg,#0d0a2b 0%,#1a0a3d 50%,#000 100%);position:relative;perspective:800px}
+    .preview-3 span{display:inline-block;transform:rotateX(15deg) rotateY(-15deg);background:linear-gradient(135deg,#00f0ff,#ff00aa,#ffea00);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:900;font-size:42px;letter-spacing:-.04em;font-family:Inter,ui-sans-serif,system-ui;filter:drop-shadow(0 0 30px rgba(0,240,255,.4));animation:tilt 4s ease-in-out infinite alternate}
+    @keyframes tilt{from{transform:rotateX(15deg) rotateY(-15deg)}to{transform:rotateX(-10deg) rotateY(15deg)}}
+    .tag-1{background:#ffd166;color:#000}
+    .tag-2{background:#111;color:#f5f1e8}
+    .tag-3{background:#00f0ff;color:#000}
+    .footer{color:#666;font-size:13px;line-height:1.6;border-top:1px solid #222;padding-top:24px;font-family:Inter,ui-sans-serif,system-ui}
+    .footer a{color:#fff}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Style overhaul prototypes</h1>
+    <p class="lead">Three takes on what Devprint could look like as a sharable virtual CV. Each is a static mockup wired with sample data for sindresorhus so you can flip between them and decide a direction. Click any card.</p>
+    <div class="grid">
+      <a class="card" href="./v1-arcade.html">
+        <div class="preview preview-1"><span>EPIC</span></div>
+        <div class="body">
+          <div class="name">v1 — Trading Card</div>
+          <div class="desc">Top-Trumps × Pokémon: a literal collectable card. Pure black, neon palette, scan-line, big tier badge, isometric repo blocks. Optimised for screenshotting and tweeting "I rolled a Legendary."</div>
+          <span class="tag tag-1">share-as-flex</span>
+        </div>
+      </a>
+      <a class="card" href="./v2-letterhead.html">
+        <div class="preview preview-2"><span>Sindre</span> Sorhus</div>
+        <div class="body">
+          <div class="name">v2 — Letterhead</div>
+          <div class="desc">Reads like a printed CV. Off-white paper, slab-serif heading, a single red accent, double-rule divider. Lifeless sci-fi gradients deleted. Optimised for sharing with a hiring manager who would close a glass panel on sight.</div>
+          <span class="tag tag-2">share-as-CV</span>
+        </div>
+      </a>
+      <a class="card" href="./v3-holo.html">
+        <div class="preview preview-3"><span>HOLO</span></div>
+        <div class="body">
+          <div class="name">v3 — Holo Profile</div>
+          <div class="desc">Real CSS 3D perspective: the battle card tilts to your mouse, the builder graph is a galactic disk, the repo grid is an isometric tower of glowing blocks. Optimised for "wait what is that, send the link".</div>
+          <span class="tag tag-3">share-as-vibe</span>
+        </div>
+      </a>
+    </div>
+    <div class="footer">
+      All three include the same "virtual CV" shape: avatar + tagline + battle card + a "currently building" line + skill bars + repo highlights + a clear share/embed CTA. The visual language differs.
+      <br><br>
+      Pick a direction (or tell me what to mash up) and I'll roll it into the live SPA.
+      <br><br>
+      Live site: <a href="/">devprint.dev</a> · <a href="https://github.com/jhammant/devprint">source</a>
+    </div>
+  </div>
+</body>
+</html>

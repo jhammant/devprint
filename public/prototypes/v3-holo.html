@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>v3 — Holo Profile · Devprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Space+Grotesk:wght@400;500;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#070416;--panel:rgba(20,12,55,0.55);--ink:#f0e8ff;--muted:#9088c8;
+      --accent-a:#00f0ff;--accent-b:#ff00aa;--accent-c:#ffea00;
+    }
+    body{font-family:'Space Grotesk',Inter,ui-sans-serif,system-ui;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;perspective:1200px}
+    /* Animated mesh background */
+    body::before{content:"";position:fixed;inset:-20%;background:
+      radial-gradient(circle at 20% 30%,rgba(0,240,255,.18) 0%,transparent 30%),
+      radial-gradient(circle at 80% 60%,rgba(255,0,170,.18) 0%,transparent 35%),
+      radial-gradient(circle at 50% 90%,rgba(255,234,0,.10) 0%,transparent 30%);
+      animation:drift 30s ease-in-out infinite alternate;z-index:-2}
+    body::after{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(0,240,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:-1;mask-image:radial-gradient(ellipse at center,#000 30%,transparent 75%)}
+    @keyframes drift{0%{transform:rotate(0deg) scale(1)}100%{transform:rotate(20deg) scale(1.1)}}
+    .wrap{max-width:1180px;margin:0 auto;padding:32px 22px}
+    /* nav */
+    .nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:48px}
+    .brand{font-weight:900;font-size:18px;letter-spacing:-.04em;display:flex;align-items:center;gap:10px}
+    .brand .mark{width:34px;height:34px;border-radius:10px;background:conic-gradient(from 210deg,var(--accent-a),var(--accent-b),var(--accent-c),var(--accent-a));box-shadow:0 0 30px rgba(255,0,170,.5);transform:rotate3d(1,1,0,30deg);animation:spin 6s linear infinite}
+    @keyframes spin{to{transform:rotate3d(1,1,0,390deg)}}
+    .nav a{color:var(--muted);font-size:13px;text-decoration:none;font-family:'JetBrains Mono',monospace}
+    .nav a:hover{color:var(--accent-a)}
+    /* Hero — 3D tilted profile slab */
+    .hero{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;margin-bottom:48px;align-items:center}
+    .hero-text{transform:translateZ(0)}
+    .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent-a);margin-bottom:14px;text-shadow:0 0 14px rgba(0,240,255,.6)}
+    .h1{font-size:clamp(48px,7vw,84px);font-weight:900;line-height:.92;letter-spacing:-.05em;background:linear-gradient(120deg,var(--ink) 0%,var(--ink) 50%,var(--accent-b) 75%,var(--accent-c) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:18px}
+    .lead{font-size:18px;line-height:1.5;color:var(--muted);max-width:46ch;margin-bottom:18px}
+    .lead strong{color:var(--ink);font-weight:700}
+    .open-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid rgba(0,240,255,.4);border-radius:999px;background:rgba(0,240,255,.08);font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-a);text-decoration:none}
+    .open-pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent-a);box-shadow:0 0 12px var(--accent-a);animation:blink 1.4s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+    /* The holo card — 3D mouse-tilted */
+    .holo{perspective:1400px}
+    .holo-inner{position:relative;border-radius:32px;padding:32px;background:linear-gradient(135deg,rgba(0,240,255,.08),rgba(255,0,170,.08));border:1px solid rgba(255,255,255,.12);box-shadow:0 60px 120px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.18);backdrop-filter:blur(14px);transform-style:preserve-3d;transform:rotateX(var(--rx,4deg)) rotateY(var(--ry,-6deg));transition:transform .15s ease}
+    .holo-inner::before{content:"";position:absolute;inset:0;border-radius:32px;background:linear-gradient(115deg,transparent 0%,rgba(255,255,255,.18) var(--shx,40%),transparent 70%);pointer-events:none;mix-blend-mode:overlay}
+    .holo .avatar{width:120px;height:120px;border-radius:30px;border:2px solid rgba(255,255,255,.3);box-shadow:0 30px 60px rgba(0,0,0,.5);transform:translateZ(60px);background:#222;object-fit:cover}
+    .holo .name{font-weight:900;font-size:34px;letter-spacing:-.03em;margin-top:18px;transform:translateZ(40px)}
+    .holo .archetype{display:inline-block;margin-top:6px;padding:5px 11px;border-radius:6px;background:linear-gradient(135deg,var(--accent-c),var(--accent-b));color:#000;font-weight:900;font-size:13px;letter-spacing:.04em;transform:translateZ(50px);box-shadow:0 8px 24px rgba(255,0,170,.5)}
+    .holo .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px;transform:translateZ(30px)}
+    .holo .stat{padding:14px;background:rgba(0,0,0,.35);border-radius:12px;border:1px solid rgba(255,255,255,.08)}
+    .holo .stat b{display:block;font-size:24px;font-weight:900;letter-spacing:-.02em;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .holo .stat span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+    /* Builder galaxy — 3D rotating disk */
+    .galaxy-wrap{margin-top:64px;perspective:1600px}
+    .panel{background:var(--panel);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:32px;backdrop-filter:blur(20px)}
+    .panel h2{font-weight:900;font-size:24px;letter-spacing:-.03em;margin-bottom:6px}
+    .panel .sub{color:var(--muted);font-size:13px;font-family:'JetBrains Mono',monospace;margin-bottom:24px}
+    .galaxy{position:relative;height:420px;display:flex;align-items:center;justify-content:center;transform-style:preserve-3d}
+    .galaxy-disk{position:relative;width:520px;height:520px;transform-style:preserve-3d;transform:rotateX(60deg);animation:rotate-disk 38s linear infinite}
+    @keyframes rotate-disk{to{transform:rotateX(60deg) rotateZ(360deg)}}
+    .ring{position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(255,255,255,.1)}
+    .ring.r2{inset:60px}
+    .ring.r3{inset:140px}
+    .core{position:absolute;left:50%;top:50%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.4),rgba(0,240,255,.6) 30%,rgba(255,0,170,.5) 70%,transparent 100%);transform:translate(-50%,-50%);box-shadow:0 0 80px rgba(0,240,255,.7),0 0 160px rgba(255,0,170,.5);animation:pulse 3s ease-in-out infinite alternate}
+    @keyframes pulse{from{filter:brightness(1)}to{filter:brightness(1.4)}}
+    .core-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotateX(-60deg);font-weight:900;font-size:14px;letter-spacing:-.02em;color:#fff;text-shadow:0 0 8px rgba(0,0,0,.8);text-align:center;line-height:1.2;width:100px;z-index:5}
+    .node{position:absolute;left:50%;top:50%;width:64px;height:64px;border-radius:50%;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;color:#000;box-shadow:0 0 24px currentColor;background:#fff;transform-origin:center;transform-style:preserve-3d}
+    .node b{transform:rotateX(-60deg);color:#000;font-family:'Space Grotesk',Inter,system-ui;font-weight:700;font-size:11px}
+    /* Battle stats — neon bars on glass */
+    .battle{margin-top:36px}
+    .bgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .bstat{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+    .bstat:hover{transform:translateY(-2px);border-color:var(--accent-a)}
+    .bstat::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--accent-a),var(--accent-b));transform-origin:left;transform:scaleX(var(--v,0))}
+    .bstat .label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+    .bstat .num{font-size:42px;font-weight:900;letter-spacing:-.04em;line-height:1;margin-top:8px;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .bstat .formula{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:6px;opacity:.7}
+    /* Iso repo tower — 3D blocks */
+    .repo-tower{margin-top:36px;perspective:1200px}
+    .iso{height:280px;display:flex;justify-content:center;align-items:flex-end;gap:18px;transform-style:preserve-3d;transform:rotateX(20deg)}
+    .iso .blk{position:relative;width:72px;border-radius:0;transform-style:preserve-3d;cursor:pointer;transition:transform .3s}
+    .iso .blk:hover{transform:translateY(-12px)}
+    .iso .blk .face{position:absolute;background:linear-gradient(180deg,rgba(0,240,255,.7),rgba(255,0,170,.7));border:1px solid rgba(255,255,255,.4);width:72px;backface-visibility:hidden;box-shadow:0 0 20px rgba(0,240,255,.4)}
+    .iso .blk .top{height:36px;transform:rotateX(90deg) translateZ(36px);background:linear-gradient(135deg,rgba(255,255,255,.5),rgba(0,240,255,.6));box-shadow:0 0 24px rgba(0,240,255,.7)}
+    .iso .blk .right{transform:rotateY(90deg) translateX(36px);transform-origin:right;width:72px;background:linear-gradient(180deg,rgba(255,0,170,.7),rgba(80,0,60,.9))}
+    .iso .blk .label{position:absolute;left:50%;bottom:-44px;transform:translateX(-50%) rotateX(-20deg);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);white-space:nowrap;text-align:center;width:140px}
+    .iso .blk .label small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+    /* Big share band */
+    .share-band{margin-top:48px;padding:36px;border-radius:24px;background:linear-gradient(135deg,rgba(255,234,0,.15) 0%,rgba(255,0,170,.15) 50%,rgba(0,240,255,.15) 100%);border:1px solid rgba(255,255,255,.15);text-align:center}
+    .share-band h3{font-size:32px;font-weight:900;letter-spacing:-.03em;margin-bottom:8px}
+    .share-band p{color:var(--muted);max-width:48ch;margin:0 auto 20px}
+    .share-buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .share-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:14px;background:rgba(0,0,0,.3);color:var(--ink);text-decoration:none;border:1px solid rgba(255,255,255,.15);font-weight:700;font-size:14px;transition:transform .15s,border-color .15s}
+    .share-btn:hover{transform:translateY(-2px);border-color:var(--accent-a)}
+    .share-btn.primary{background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#000;border-color:transparent;box-shadow:0 12px 36px rgba(255,0,170,.4)}
+    .colophon{margin-top:48px;padding-top:24px;border-top:1px solid rgba(255,255,255,.08);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);display:flex;justify-content:space-between}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand"><div class="mark"></div>devprint.holo</div>
+      <a href="/prototypes/">← prototype 3/3 · gallery</a>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-text">
+        <div class="eyebrow">▸ live profile · synced now</div>
+        <h1 class="h1">Sindre<br>Sorhus.</h1>
+        <p class="lead"><strong>Tools Maker.</strong> Twenty-three years of public commits, 1,134 repos shipped, 842k stars across the portfolio. Currently building <strong>refined</strong> &amp; <strong>type-fest</strong>.</p>
+        <a class="open-pill" href="#">Open to opportunities · contact</a>
+      </div>
+
+      <div class="holo">
+        <div class="holo-inner" id="holoCard">
+          <img class="avatar" src="https://avatars.githubusercontent.com/u/170270?v=4" alt="" />
+          <div class="name">Sindre Sorhus</div>
+          <div class="archetype">★ TOOLS MAKER · LEGENDARY</div>
+          <div class="stats">
+            <div class="stat"><b>1,134</b><span>repos</span></div>
+            <div class="stat"><b>842K</b><span>stars</span></div>
+            <div class="stat"><b>79K</b><span>followers</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="galaxy-wrap">
+      <div class="panel">
+        <h2>Builder Galaxy</h2>
+        <div class="sub">primary languages × theme clusters · rotates because everything's connected</div>
+        <div class="galaxy">
+          <div class="galaxy-disk">
+            <div class="ring"></div>
+            <div class="ring r2"></div>
+            <div class="ring r3"></div>
+            <div class="core"></div>
+            <!-- nodes positioned around the disk -->
+            <div class="node" style="background:#f7df1e;color:#000;transform:translate(-50%,-50%) rotateZ(0deg) translateX(220px)"><b>JS · 56</b></div>
+            <div class="node" style="background:#3178c6;color:#fff;transform:translate(-50%,-50%) rotateZ(60deg) translateX(220px)"><b>TS · 13</b></div>
+            <div class="node" style="background:#f05138;color:#fff;transform:translate(-50%,-50%) rotateZ(120deg) translateX(220px)"><b>Swift · 11</b></div>
+            <div class="node" style="background:#89e051;color:#000;transform:translate(-50%,-50%) rotateZ(180deg) translateX(220px)"><b>Shell</b></div>
+            <div class="node" style="background:#663399;color:#fff;transform:translate(-50%,-50%) rotateZ(240deg) translateX(220px)"><b>CSS</b></div>
+            <div class="node" style="background:#555;color:#fff;transform:translate(-50%,-50%) rotateZ(300deg) translateX(220px)"><b>C</b></div>
+          </div>
+          <div class="core-text">TOOLS<br>MAKER</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="battle">
+      <div class="panel">
+        <h2>Battle Card</h2>
+        <div class="sub">tier · LEGENDARY · all numbers derived from public GitHub data</div>
+        <div class="bgrid">
+          <div class="bstat" style="--v:.99"><div class="label">Build</div><div class="num">99</div><div class="formula">log₂(repos+1) · 12</div></div>
+          <div class="bstat" style="--v:.99"><div class="label">Impact</div><div class="num">99</div><div class="formula">log₂(stars+1) · 7 + log₂(followers+1) · 3</div></div>
+          <div class="bstat" style="--v:.6"><div class="label">Versatility</div><div class="num">60</div><div class="formula">languages · 6 + themes · 4</div></div>
+          <div class="bstat" style="--v:.51"><div class="label">Momentum</div><div class="num">51</div><div class="formula">recent push share · 90</div></div>
+          <div class="bstat" style="--v:.99"><div class="label">Community</div><div class="num">99</div><div class="formula">followers + forks signal</div></div>
+          <div class="bstat" style="--v:.8"><div class="label">Originality</div><div class="num">80</div><div class="formula">non-fork ratio · 30 + themes · 3</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="repo-tower">
+      <div class="panel">
+        <h2>Top Repos</h2>
+        <div class="sub">isometric heights = log₂(stars) · click any block</div>
+        <div class="iso">
+          <a class="blk" href="https://github.com/sindresorhus/awesome" style="height:200px"><div class="face front" style="height:200px"></div><div class="face top"></div><div class="face right" style="height:200px"></div><div class="label">awesome<small>★ 463k</small></div></a>
+          <a class="blk" href="https://github.com/sindresorhus/awesome-nodejs" style="height:140px"><div class="face front" style="height:140px"></div><div class="face top"></div><div class="face right" style="height:140px"></div><div class="label">awesome-nodejs<small>★ 65k</small></div></a>
+          <a class="blk" href="https://github.com/sindresorhus/awesome-electron" style="height:108px"><div class="face front" style="height:108px"></div><div class="face top"></div><div class="face right" style="height:108px"></div><div class="label">awesome-electron<small>★ 27k</small></div></a>
+          <a class="blk" href="https://github.com/sindresorhus/quick-look-plugins" style="height:90px"><div class="face front" style="height:90px"></div><div class="face top"></div><div class="face right" style="height:90px"></div><div class="label">quick-look<small>★ 18k</small></div></a>
+          <a class="blk" href="https://github.com/sindresorhus/type-fest" style="height:84px"><div class="face front" style="height:84px"></div><div class="face top"></div><div class="face right" style="height:84px"></div><div class="label">type-fest<small>★ 17k</small></div></a>
+          <a class="blk" href="https://github.com/sindresorhus/ky" style="height:80px"><div class="face front" style="height:80px"></div><div class="face top"></div><div class="face right" style="height:80px"></div><div class="label">ky<small>★ 16k</small></div></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="share-band">
+      <h3>Send your devprint as your CV.</h3>
+      <p>One link, always live. No résumé to maintain, no LinkedIn polish. Hiring managers can spend ten seconds and learn more than from any 6-page PDF.</p>
+      <div class="share-buttons">
+        <a class="share-btn primary" href="#">↗ Share to X</a>
+        <a class="share-btn" href="#">📋 Copy link</a>
+        <a class="share-btn" href="#">📥 PDF</a>
+        <a class="share-btn" href="#">&lt;/&gt; Embed</a>
+      </div>
+    </div>
+
+    <div class="colophon">
+      <span>devprint.dev/sindresorhus</span>
+      <span>v3 — holo profile prototype · live · public data only · 08 may 2026</span>
+    </div>
+  </div>
+
+  <script>
+    // Mouse-tracked 3D tilt on the holo card
+    const card = document.getElementById('holoCard');
+    const rect = () => card.getBoundingClientRect();
+    document.addEventListener('mousemove', (e) => {
+      const r = rect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dx = (e.clientX - cx) / r.width;
+      const dy = (e.clientY - cy) / r.height;
+      const ry = Math.max(-12, Math.min(12, dx * -16));
+      const rx = Math.max(-10, Math.min(10, dy * 12));
+      card.style.setProperty('--rx', rx + 'deg');
+      card.style.setProperty('--ry', ry + 'deg');
+      card.style.setProperty('--shx', (50 - dx * 50) + '%');
+    });
+  </script>
+</body>
+</html>
