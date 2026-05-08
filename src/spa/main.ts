@@ -98,6 +98,17 @@ let lastTarget = '';
 // is already there (just unmount the takeover and it reappears instantly).
 let dashboardRenderedFor: string | null = null;
 
+// First-paint protection: if the URL already names a target, throw the
+// loader up *before* we set #app's innerHTML. Without this, the browser
+// paints the hero/intro chrome for one frame between innerHTML being set
+// and build() reaching showLoader() — that's the "I briefly see the main
+// intro bit" flash. showLoader is a function declaration so it's hoisted
+// and safe to call here. Idempotent: build() will call it again later.
+const _bootTarget = (location.pathname || '').replace(/^\/agents\/?/, '').replace(/^\/+|\/+$/g, '');
+if (_bootTarget && _bootTarget !== 'customise.html' && !_bootTarget.startsWith('prototypes')) {
+  showLoader(_bootTarget);
+}
+
 app.innerHTML = `
 <div class="wrap">
   <nav class="nav"><div class="brand"><div class="mark"></div><span id="brandText">Devprint</span></div><div class="navlinks"><button class="modebtn" id="humanMode" type="button">Show-off card</button><button class="modebtn" id="agentMode" type="button">Agent pack</button><div class="pill">GitHub user or repo → useful artefact</div></div></nav>
