@@ -96,6 +96,16 @@ describe('parseAgentPath', () => {
       throw new Error(`expected repo-insights, got ${r.ok ? r.route.kind : r.reason}`);
     }
   });
+
+  it('parses /<u>.resume.json as user-resume (priority over user-insights)', () => {
+    const r = parseAgentPath('/jhammant.resume.json');
+    expect(r.ok).toBe(true);
+    if (r.ok && r.route.kind === 'user-resume') {
+      expect(r.route.user).toBe('jhammant');
+    } else {
+      throw new Error(`expected user-resume, got ${r.ok ? r.route.kind : r.reason}`);
+    }
+  });
 });
 
 describe('cleanTarget', () => {

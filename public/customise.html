@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customise your Devprint</title>
+  <meta name="description" content="Add a tagline, what you're available for, career history, talks, writing, and endorsements to your devprint.dev card. Three minutes, one JSON file." />
+  <meta property="og:title" content="Customise your Devprint" />
+  <meta property="og:description" content="Add a tagline, what you're available for, career history, talks, writing, and endorsements to your devprint.dev card." />
+  <meta property="og:url" content="https://devprint.dev/customise.html" />
+  <link rel="icon" type="image/svg+xml" href="/og-default.svg" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,ui-sans-serif,system-ui;background:#070913;color:#fff;line-height:1.6;padding:48px 24px;min-height:100vh}
+    body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(124,92,255,.18),transparent 40%),radial-gradient(ellipse at 75% 80%,rgba(49,217,255,.12),transparent 45%);z-index:-1;pointer-events:none}
+    a{color:#62f0a7;text-decoration:none;border-bottom:1px solid currentColor}
+    a:hover{color:#9aff9a}
+    main{max-width:780px;margin:0 auto}
+    .nav{display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#888;margin-bottom:48px}
+    .nav .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700}
+    .nav .brand::before{content:"";display:block;width:24px;height:24px;border-radius:6px;background:conic-gradient(from 210deg,#31d9ff,#7c5cff,#ff5cc8,#ffd166,#62f0a7,#31d9ff)}
+    .nav a{color:#888;border-bottom:0}
+    .nav a:hover{color:#fff}
+    h1{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:900;font-size:clamp(40px,7vw,72px);letter-spacing:-.04em;line-height:.95;margin-bottom:14px;font-variation-settings:"opsz" 144}
+    h1 em{color:#62f0a7;font-style:italic}
+    .lead{font-family:Fraunces,Georgia,serif;font-size:22px;line-height:1.45;color:#bbb;max-width:50ch;margin-bottom:48px}
+    h2{font-family:Inter,sans-serif;font-weight:900;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#62f0a7;margin:48px 0 16px;padding-bottom:6px;border-bottom:1px solid rgba(98,240,167,.3)}
+    p{margin-bottom:16px;color:#ccc;max-width:62ch}
+    p strong{color:#fff;font-weight:700}
+    code{font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);padding:1px 6px;border-radius:3px;font-size:.92em;color:#62f0a7}
+    .step{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:24px 28px;margin-bottom:18px;display:grid;grid-template-columns:48px 1fr;gap:18px;align-items:flex-start}
+    .step-num{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:900;font-size:48px;color:#62f0a7;line-height:.9}
+    .step-body h3{font-family:Inter,sans-serif;font-weight:900;font-size:18px;letter-spacing:-.01em;margin-bottom:6px;color:#fff}
+    .step-body p{font-size:14px;color:#ccc;margin-bottom:10px}
+    .step-body p:last-child{margin-bottom:0}
+    .step-body .cta{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;background:#62f0a7;color:#070913;padding:9px 16px;border-radius:6px;margin-top:8px;border-bottom:0}
+    .step-body .cta:hover{background:#9aff9a}
+    .step-body .cta.ghost{background:transparent;color:#62f0a7;border:1px solid #62f0a7}
+    .step-body .cta.ghost:hover{background:rgba(98,240,167,.1)}
+    pre{background:#0c1018;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:18px 20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.55;color:#ccc;margin:14px 0}
+    pre .key{color:#62f0a7}
+    pre .str{color:#ffd166}
+    pre .com{color:#666;font-style:italic}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+    .field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px}
+    .field h4{font-family:'JetBrains Mono',monospace;font-size:13px;color:#62f0a7;margin-bottom:4px;letter-spacing:.04em}
+    .field p{font-size:13px;color:#aaa;margin:0}
+    .verify{background:rgba(98,240,167,.06);border:1px solid rgba(98,240,167,.3);border-radius:10px;padding:18px 22px;margin-top:32px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+    .verify .check{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:900;font-size:36px;color:#62f0a7}
+    .footer{margin-top:64px;padding-top:24px;border-top:1px solid rgba(255,255,255,.08);font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;letter-spacing:.04em}
+    @media(max-width:560px){.grid-2{grid-template-columns:1fr}.step{grid-template-columns:1fr;gap:8px}.step-num{font-size:32px}}
+  </style>
+</head>
+<body>
+<main>
+  <nav class="nav">
+    <a class="brand" href="/"><span>D · Devprint</span></a>
+    <a href="/jhammant">try it on a profile →</a>
+  </nav>
+
+  <h1>Customise your <em>Devprint</em>.</h1>
+  <p class="lead">Public GitHub data only gets you 80% of the way to a useful CV. The remaining 20% — your tagline, what you're available for, your story — comes from a small JSON file in your own GitHub. Three minutes.</p>
+
+  <h2>The fastest path · use our template</h2>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h3>Click "Use this template" on our repo</h3>
+      <p>Creates a clean copy at <code>&lt;you&gt;/devprint</code>. No fork lineage to manage; you own the new repo outright.</p>
+      <a class="cta" href="https://github.com/new?template_owner=jhammant&template_name=devprint" target="_blank" rel="noreferrer">Use this template →</a>
+      <a class="cta ghost" href="https://github.com/jhammant/devprint/tree/main/template" target="_blank" rel="noreferrer">Or browse the template files</a>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h3>Edit <code>devprint.json</code> in your new repo</h3>
+      <p>Open the file in GitHub's web editor — no clone needed. Replace the placeholder values with yours, save, commit. Every field is optional.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h3>Visit <code>devprint.dev/&lt;your-username&gt;</code></h3>
+      <p>Your card now reads from <code>&lt;you&gt;/devprint/devprint.json</code>. Changes propagate within ~5 minutes (CloudFront cache).</p>
+      <p>Want it instant? Force a refresh by appending <code>?style=letterhead</code> — that bypasses the SPA's local cache.</p>
+    </div>
+  </div>
+
+  <h2>Already have a config repo?</h2>
+  <p>If you already maintain <code>&lt;you&gt;/.github</code> (the standard "GitHub config" repo many maintainers have), drop the same <code>devprint.json</code> there and we'll find it. Search order:</p>
+  <pre><span class="com">// First match wins.</span>
+<span class="key">1.</span> <span class="str">"&lt;you&gt;/.github/devprint.json"</span>
+<span class="key">2.</span> <span class="str">"&lt;you&gt;/&lt;you&gt;/devprint.json"</span>  <span class="com">// profile-readme repo</span>
+<span class="key">3.</span> <span class="str">"&lt;you&gt;/devprint/devprint.json"</span>  <span class="com">// our template</span></pre>
+
+  <h2>What you can put in it</h2>
+  <div class="grid-2">
+    <div class="field"><h4>tagline</h4><p>Single line under your name.</p></div>
+    <div class="field"><h4>status</h4><p>Status ribbon copy. <strong>No ribbon by default</strong> — only shown when you set this.</p></div>
+    <div class="field"><h4>about</h4><p>Replaces the auto-generated About paragraph.</p></div>
+    <div class="field"><h4>now</h4><p>"Right now —" line. What you're up to today.</p></div>
+    <div class="field"><h4>experience</h4><p>Array of <code>{role, org, from, to, summary, href}</code>.</p></div>
+    <div class="field"><h4>education</h4><p>Array of <code>{org, degree, date}</code>.</p></div>
+    <div class="field"><h4>talks / writing</h4><p>Arrays of <code>{title, href, date, venue/publisher}</code>.</p></div>
+    <div class="field"><h4>endorsements</h4><p>Array of <code>{from, blurb, role, github}</code>.</p></div>
+    <div class="field"><h4>highlights</h4><p>Bulleted wins. Up to 6.</p></div>
+    <div class="field"><h4>skills</h4><p>Skill chips. Up to 16.</p></div>
+    <div class="field"><h4>pinned</h4><p>Repo names to feature first in Selected Works.</p></div>
+    <div class="field"><h4>links</h4><p>Outbound links — site, X, Mastodon, LinkedIn. https only.</p></div>
+  </div>
+
+  <p style="margin-top:18px"><a href="https://github.com/jhammant/devprint/blob/main/docs/DEVPRINT_JSON.md" target="_blank" rel="noreferrer">→ Full schema reference (lengths, types, safety guarantees)</a></p>
+
+  <h2>What you get back</h2>
+  <p>Your card at <code>devprint.dev/&lt;you&gt;</code> grows new sections — Career timeline, Experience, Education, Talks, Writing, Endorsements — and the static "About" paragraph swaps for your own copy. The whole thing exports to PNG, prints as PDF, or you can drop the URL into LinkedIn.</p>
+  <p>Bonus: <strong>JSON Resume export</strong> at <code>devprint.dev/&lt;you&gt;.resume.json</code> — recruiters and ATS pipelines can parse it natively.</p>
+
+  <div class="verify">
+    <span class="check">✓</span>
+    <div>
+      <strong style="color:#fff">Safety:</strong>
+      <span style="color:#ccc">All strings are PII-scrubbed and HTML-escaped on render. Links must be <code>http(s)</code>. Per-field length caps. The whole file is optional — Devprint renders fine without it.</span>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>devprint.dev/customise.html · public data only · live</span>
+    <a href="https://github.com/jhammant/devprint" target="_blank" rel="noreferrer" style="color:#666">github.com/jhammant/devprint</a>
+  </footer>
+</main>
+</body>
+</html>

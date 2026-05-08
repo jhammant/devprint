@@ -10,7 +10,8 @@ export type AgentRoute =
   | { kind: 'vs'; a: string; b: string }                  // Wave 2
   | { kind: 'drift'; user: string; repo: string; sha?: string } // Wave 2
   | { kind: 'user-insights'; user: string }               // JSON sidecar: /<u>.json
-  | { kind: 'repo-insights'; user: string; repo: string }; // JSON sidecar: /<u>/<r>.json
+  | { kind: 'repo-insights'; user: string; repo: string } // JSON sidecar: /<u>/<r>.json
+  | { kind: 'user-resume'; user: string };                // JSON Resume: /<u>.resume.json
 
 export type ParseResult =
   | { ok: true; route: AgentRoute }
@@ -43,6 +44,11 @@ export function parseAgentPath(rawPath: string, search?: string): ParseResult {
   // /<u>/<r>/drift
   const driftMatch = /^([^/]+)\/([^/]+)\/drift$/i.exec(path);
   if (driftMatch) return ok({ kind: 'drift', user: driftMatch[1], repo: driftMatch[2], sha });
+
+  // /<u>.resume.json — JSON Resume export (jsonresume.org schema). Matched
+  // BEFORE the `<u>.json` rule so the longer suffix wins.
+  const resumeMatch = /^([^/]+)\.resume\.json$/.exec(path);
+  if (resumeMatch) return ok({ kind: 'user-resume', user: resumeMatch[1] });
 
   // /<u>/<r>.json — structured JSON sidecar (must come BEFORE the .md match
   // so `.json` is not parsed as a repo named "<r>.json" → ".md" suffix).

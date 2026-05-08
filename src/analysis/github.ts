@@ -43,6 +43,17 @@ export type GhClient = {
     repo: string,
     limit?: number,
   ): Promise<GhContributor[]>;
+  /**
+   * Optional: search merged PRs authored by the given user. Used to find
+   * "external contributions" — work the user's done in other people's
+   * repos. Optional because unauthenticated clients hit the search rate
+   * limit (10/min) very fast; the Lambda's authed client has the full
+   * 30/min and is the one that actually calls this.
+   */
+  searchMergedPRs?(
+    user: string,
+    limit?: number,
+  ): Promise<Array<{ owner: string; repo: string; title: string; html_url: string; merged_at: string }>>;
 };
 
 const PACKAGE_FILES = [
@@ -194,6 +205,38 @@ export function createGitHubClient(opts: GhClientOptions = {}): GhClient {
           avatar_url: c.avatar_url ?? '',
           contributions: c.contributions ?? 0,
         }));
+    },
+    async searchMergedPRs(user, limit) {
+      // /search/issues?q=author:<u>+is:pr+is:merged returns merged PRs by
+      // this user across the entire public GitHub. We use it to detect
+      // "external contributions" — repos they don't own. Search has a
+      // narrower rate-limit (30/min authed, 10/min unauth) and 1000-result
+      // cap; we ask for `limit` items, default 30.
+      const perPage = Math.min(Math.max(limit ?? 30, 1), 100);
+      const q = encodeURIComponent(`author:${user} is:pr is:merged`);
+      type SearchItem = {
+        title?: string;
+        html_url?: string;
+        repository_url?: string;
+        pull_request?: { merged_at?: string | null };
+      };
+      const out = await getOptional<{ items?: SearchItem[] }>(
+        `https://api.github.com/search/issues?q=${q}&per_page=${perPage}&sort=created&order=desc`,
+      );
+      if (!out?.items) return [];
+      return out.items
+        .map((it) => {
+          const m = (it.repository_url ?? '').match(/repos\/([^/]+)\/([^/]+)$/);
+          if (!m || !it.html_url) return null;
+          return {
+            owner: m[1],
+            repo: m[2],
+            title: it.title ?? '',
+            html_url: it.html_url,
+            merged_at: it.pull_request?.merged_at ?? '',
+          };
+        })
+        .filter((v): v is { owner: string; repo: string; title: string; html_url: string; merged_at: string } => !!v);
     },
   };
 }

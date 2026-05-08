@@ -9,6 +9,7 @@ import type { GhClient } from './github.ts';
 import { packageFileCandidates } from './github.ts';
 import { detectStack, mergeStacks, type StackInference } from './stack.ts';
 import { inferCommitStyle, type CommitStyleVerdict } from './commits.ts';
+import { buildCareerTimeline, type CareerTimeline } from './timeline.ts';
 import { scoreRepo } from './infer.ts';
 import { scrub } from './scrub.ts';
 import type { GhContributor, GhRepo, RepoFile } from './types.ts';
@@ -30,6 +31,50 @@ export type RelatedProfile = {
  * styles are designed to look fine when this is `undefined` (the common
  * case); fields only render when the user has filled them in.
  */
+export type ProfileExperience = {
+  role: string;
+  org?: string;
+  /** ISO year-month (`2024-03`) or year (`2024`). */
+  from?: string;
+  to?: string;
+  summary?: string;
+  href?: string;
+};
+
+export type ProfileTalk = {
+  title: string;
+  venue?: string;
+  /** Year or year-month. */
+  date?: string;
+  href?: string;
+};
+
+export type ProfileWriting = {
+  title: string;
+  /** Year or year-month. */
+  date?: string;
+  href: string;
+  publisher?: string;
+};
+
+export type ProfileEducation = {
+  degree?: string;
+  org: string;
+  /** Year or year-range, e.g. `2018` or `2014-2018`. */
+  date?: string;
+};
+
+export type ProfileEndorsement = {
+  /** Author's display name. */
+  from: string;
+  /** Optional GitHub login — links the endorser to their devprint card. */
+  github?: string;
+  /** Optional title/role of the endorser. */
+  role?: string;
+  /** The quote itself. */
+  blurb: string;
+};
+
 export type ProfileExtra = {
   /** Single-line tagline shown under the name. */
   tagline?: string;
@@ -53,6 +98,16 @@ export type ProfileExtra = {
   ask?: string;
   /** Optional contact email (only render with explicit user permission). */
   contact?: string;
+  /** Career / work history. Each entry renders as a row in "Experience". */
+  experience?: ProfileExperience[];
+  /** Education entries — degree, school, year. */
+  education?: ProfileEducation[];
+  /** Talks given — surfaced as a "Talks" section. */
+  talks?: ProfileTalk[];
+  /** Writing — blog posts, essays, books. */
+  writing?: ProfileWriting[];
+  /** Endorsements / quotes from peers. */
+  endorsements?: ProfileEndorsement[];
   /** Where this object was found (./.github/devprint.json etc.) — debug only. */
   source?: string;
 };
@@ -92,6 +147,39 @@ export type Insights = {
    * styles render fine on GitHub data alone.
    */
   profileExtra?: ProfileExtra;
+  /**
+   * Career milestones derived from `created_at` / `pushed_at` across the
+   * repo set: first public repo, first popular (≥100 ★) repo, peak repo,
+   * latest activity, plus the language used per year.
+   */
+  timeline?: CareerTimeline;
+  /**
+   * Top external organisations the user has contributed to — repos they
+   * don't own. Detected via the GitHub commit-search API. Empty when no
+   * external work is found or the search rate-limit was hit.
+   */
+  externalContribs?: ExternalContribOrg[];
+  /** A small set of provenance signals surfaced as trust badges. */
+  provenanceBadges?: ProvenanceBadge[];
+};
+
+export type ExternalContribOrg = {
+  /** Owner login (typically an org). */
+  org: string;
+  org_avatar?: string;
+  /** Number of merged PRs / commits the user has against this org. */
+  contributions: number;
+  /** Top repos within this org the user has contributed to. */
+  topRepos: Array<{ name: string; full_name: string; html_url: string; stars?: number }>;
+};
+
+export type ProvenanceBadge = {
+  /** Short label, eg. "Verified active" / "Maintainer" / "Long arc". */
+  label: string;
+  /** One-sentence rationale used as a hover/tooltip. */
+  detail: string;
+  /** Brand colour bucket the renderer maps to a hue. */
+  tone: 'positive' | 'neutral' | 'milestone';
 };
 
 export type BuildInsightsOptions = {
@@ -147,6 +235,14 @@ export async function buildUserInsights(
   const reposAnalysed = repos.length;
   const publicReposTotal = profile?.public_repos;
   const profileExtra = await fetchProfileExtra(client, user);
+  const timeline = buildCareerTimeline(repos);
+  const externalContribs = await detectExternalContributions(client, user).catch(() => []);
+  const provenanceBadges = deriveProvenanceBadges({
+    repos,
+    timeline,
+    relatedProfiles,
+    externalContribs,
+  });
 
   return {
     target: user,
@@ -159,6 +255,9 @@ export async function buildUserInsights(
     reposAnalysed,
     ...(publicReposTotal !== undefined ? { publicReposTotal } : {}),
     ...(profileExtra ? { profileExtra } : {}),
+    ...(timeline.milestones.length ? { timeline } : {}),
+    ...(externalContribs.length ? { externalContribs } : {}),
+    ...(provenanceBadges.length ? { provenanceBadges } : {}),
   };
 }
 
@@ -208,9 +307,13 @@ async function fetchProfileExtra(
   client: GhClient,
   owner: string,
 ): Promise<ProfileExtra | undefined> {
+  // Three locations checked in order. The third — `<owner>/devprint` — is
+  // what users get when they fork our template repo: cloning the template
+  // and editing one file is the lowest-friction path to a customised card.
   const sources: Array<[string, string, string]> = [
     [owner, '.github', 'devprint.json'],
     [owner, owner, 'devprint.json'],
+    [owner, 'devprint', 'devprint.json'],
   ];
   for (const [o, r, p] of sources) {
     const file = await client.getRepoFile(o, r, p).catch(() => undefined);
@@ -267,6 +370,110 @@ function parseProfileExtra(raw: string): ProfileExtra | undefined {
       if (safe.length >= 8) break;
     }
     if (safe.length) out.links = safe;
+  }
+
+  // Helper: only keep http(s) links, otherwise drop.
+  const safeHref = (raw: unknown): string | undefined => {
+    if (typeof raw !== 'string') return undefined;
+    const h = raw.slice(0, 500);
+    return /^https?:\/\//i.test(h) ? h : undefined;
+  };
+  const safeDate = (raw: unknown): string | undefined => {
+    if (typeof raw !== 'string') return undefined;
+    // Permissive: yyyy, yyyy-mm, yyyy-mm-dd, yyyy-yyyy, "present"
+    const t = raw.slice(0, 32);
+    return /^(\d{4}|present|\d{4}-\d{2}|\d{4}-\d{4}|\d{4}-\d{2}-\d{2})$/i.test(t) || /^\d{4}.*$/.test(t) ? cleanStr(t, 32) : undefined;
+  };
+
+  // Experience: career rows.
+  if (Array.isArray(r.experience)) {
+    const safe: ProfileExperience[] = [];
+    for (const item of r.experience as unknown[]) {
+      if (!item || typeof item !== 'object') continue;
+      const i = item as Record<string, unknown>;
+      const role = typeof i.role === 'string' ? cleanStr(i.role, 120) : undefined;
+      if (!role) continue;
+      const e: ProfileExperience = { role };
+      if (typeof i.org === 'string') e.org = cleanStr(i.org, 120);
+      const from = safeDate(i.from); if (from) e.from = from;
+      const to = safeDate(i.to); if (to) e.to = to;
+      if (typeof i.summary === 'string') e.summary = cleanStr(i.summary, 600);
+      const href = safeHref(i.href); if (href) e.href = href;
+      safe.push(e);
+      if (safe.length >= 12) break;
+    }
+    if (safe.length) out.experience = safe;
+  }
+
+  // Education.
+  if (Array.isArray(r.education)) {
+    const safe: ProfileEducation[] = [];
+    for (const item of r.education as unknown[]) {
+      if (!item || typeof item !== 'object') continue;
+      const i = item as Record<string, unknown>;
+      const org = typeof i.org === 'string' ? cleanStr(i.org, 120) : undefined;
+      if (!org) continue;
+      const e: ProfileEducation = { org };
+      if (typeof i.degree === 'string') e.degree = cleanStr(i.degree, 120);
+      const date = safeDate(i.date); if (date) e.date = date;
+      safe.push(e);
+      if (safe.length >= 6) break;
+    }
+    if (safe.length) out.education = safe;
+  }
+
+  // Talks.
+  if (Array.isArray(r.talks)) {
+    const safe: ProfileTalk[] = [];
+    for (const item of r.talks as unknown[]) {
+      if (!item || typeof item !== 'object') continue;
+      const i = item as Record<string, unknown>;
+      const title = typeof i.title === 'string' ? cleanStr(i.title, 200) : undefined;
+      if (!title) continue;
+      const e: ProfileTalk = { title };
+      if (typeof i.venue === 'string') e.venue = cleanStr(i.venue, 120);
+      const date = safeDate(i.date); if (date) e.date = date;
+      const href = safeHref(i.href); if (href) e.href = href;
+      safe.push(e);
+      if (safe.length >= 12) break;
+    }
+    if (safe.length) out.talks = safe;
+  }
+
+  // Writing.
+  if (Array.isArray(r.writing)) {
+    const safe: ProfileWriting[] = [];
+    for (const item of r.writing as unknown[]) {
+      if (!item || typeof item !== 'object') continue;
+      const i = item as Record<string, unknown>;
+      const title = typeof i.title === 'string' ? cleanStr(i.title, 200) : undefined;
+      const href = safeHref(i.href);
+      if (!title || !href) continue;
+      const e: ProfileWriting = { title, href };
+      if (typeof i.publisher === 'string') e.publisher = cleanStr(i.publisher, 120);
+      const date = safeDate(i.date); if (date) e.date = date;
+      safe.push(e);
+      if (safe.length >= 12) break;
+    }
+    if (safe.length) out.writing = safe;
+  }
+
+  // Endorsements.
+  if (Array.isArray(r.endorsements)) {
+    const safe: ProfileEndorsement[] = [];
+    for (const item of r.endorsements as unknown[]) {
+      if (!item || typeof item !== 'object') continue;
+      const i = item as Record<string, unknown>;
+      const from = typeof i.from === 'string' ? cleanStr(i.from, 120) : undefined;
+      const blurb = typeof i.blurb === 'string' ? cleanStr(i.blurb, 600) : undefined;
+      if (!from || !blurb) continue;
+      const e: ProfileEndorsement = { from, blurb };
+      if (typeof i.role === 'string') e.role = cleanStr(i.role, 120);
+      if (typeof i.github === 'string' && /^[a-zA-Z0-9-]{1,39}$/.test(i.github)) e.github = i.github;
+      safe.push(e);
+      if (safe.length >= 6) break;
+    }
+    if (safe.length) out.endorsements = safe;
   }
 
   return Object.keys(out).length ? out : undefined;
@@ -379,6 +586,119 @@ async function detectRepoStack(
   // strings even though the stack module only inspects keys.
   const safe = files.map((f) => ({ ...f, content: scrub(f.content, 'config').text }));
   return detectStack(safe);
+}
+
+// ---- external contributions / provenance helpers -------------------------
+
+/**
+ * Find merged PRs the user has made against repos they don't own. Uses the
+ * GitHub search API (one call per render against the Lambda's authed
+ * client). Best-effort; returns `[]` on any API trouble.
+ */
+async function detectExternalContributions(
+  client: GhClient,
+  user: string,
+): Promise<ExternalContribOrg[]> {
+  if (!client.searchMergedPRs) return [];
+  const prs = await client.searchMergedPRs(user, 30).catch(() => []);
+  if (!prs.length) return [];
+  // Group by owner, exclude the user's own org.
+  const byOrg = new Map<string, { count: number; repos: Map<string, { name: string; full_name: string; html_url: string; stars?: number }> }>();
+  for (const p of prs) {
+    if (p.owner.toLowerCase() === user.toLowerCase()) continue;
+    if (!byOrg.has(p.owner)) byOrg.set(p.owner, { count: 0, repos: new Map() });
+    const e = byOrg.get(p.owner)!;
+    e.count += 1;
+    if (!e.repos.has(p.repo)) {
+      e.repos.set(p.repo, {
+        name: p.repo,
+        full_name: `${p.owner}/${p.repo}`,
+        html_url: `https://github.com/${p.owner}/${p.repo}`,
+      });
+    }
+  }
+  return Array.from(byOrg.entries())
+    .map(([org, e]) => ({
+      org,
+      contributions: e.count,
+      topRepos: Array.from(e.repos.values()).slice(0, 4),
+    }))
+    .sort((a, b) => b.contributions - a.contributions)
+    .slice(0, 6);
+}
+
+/**
+ * Derive a small set of trust signals from already-computed data — no extra
+ * API calls. Everything here is grounded in observable GitHub state so it's
+ * verifiable from the live profile.
+ */
+function deriveProvenanceBadges(input: {
+  repos: readonly GhRepo[];
+  timeline: CareerTimeline;
+  relatedProfiles?: readonly RelatedProfile[];
+  externalContribs?: readonly ExternalContribOrg[];
+}): ProvenanceBadge[] {
+  const out: ProvenanceBadge[] = [];
+  const { repos, timeline, relatedProfiles, externalContribs } = input;
+
+  // Verified active: pushed within last 30 days.
+  const recent = repos
+    .map((r) => new Date(r.pushed_at ?? r.updated_at).getTime())
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => b - a)[0];
+  if (recent && Date.now() - recent < 30 * 86_400_000) {
+    out.push({
+      label: 'Verified active',
+      detail: 'Pushed to a public repo within the last 30 days.',
+      tone: 'positive',
+    });
+  }
+
+  // Long arc: ≥5 years between first and latest.
+  if (timeline.yearsActive && timeline.yearsActive >= 5) {
+    out.push({
+      label: `${timeline.yearsActive} yr arc`,
+      detail: `Public commits span ${timeline.yearsActive} calendar years.`,
+      tone: 'milestone',
+    });
+  }
+
+  // Maintainer: ≥3 repos with 100+ stars.
+  const popularCount = repos.filter((r) => r.stargazers_count >= 100).length;
+  if (popularCount >= 3) {
+    out.push({
+      label: `Maintainer · ${popularCount}× 100+★`,
+      detail: `${popularCount} non-fork repos at 100+ stars.`,
+      tone: 'positive',
+    });
+  } else if (repos[0] && repos[0].stargazers_count >= 1000) {
+    out.push({
+      label: `${repos[0].stargazers_count.toLocaleString()}★ peak`,
+      detail: `Top repo "${repos[0].name}" has crossed 1K stars.`,
+      tone: 'milestone',
+    });
+  }
+
+  // Outside contributor: external orgs detected.
+  if (externalContribs && externalContribs.length) {
+    const topOrg = externalContribs[0];
+    out.push({
+      label: `External merged PRs`,
+      detail: `${externalContribs.length} other org${externalContribs.length === 1 ? '' : 's'} have merged commits — top: ${topOrg.org} (${topOrg.contributions}).`,
+      tone: 'positive',
+    });
+  }
+
+  // Collaborative: works with N+ peers.
+  if (relatedProfiles && relatedProfiles.length >= 4) {
+    out.push({
+      label: `${relatedProfiles.length}+ collaborators`,
+      detail: 'Recurring co-contributors across the top repos.',
+      tone: 'neutral',
+    });
+  }
+
+  return out.slice(0, 5);
 }
 
 // Re-export for SPA-side typing convenience.

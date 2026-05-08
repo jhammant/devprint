@@ -22,7 +22,10 @@ export const letterhead: StyleRenderer = {
   blurb: 'Printed CV · share-as-document',
   takeover: true,
   render(data) {
-    const { profile, isRepo, repo, totalStars, battle, archetype, target, langs, repos, themes, profileExtra: x } = data;
+    const { profile, isRepo, repo, totalStars, battle, archetype, target, langs, repos, themes, profileExtra: x, insights } = data;
+    const timeline = insights?.timeline;
+    const externalContribs = insights?.externalContribs ?? [];
+    const provenanceBadges = insights?.provenanceBadges ?? [];
     // User-controlled override: pin specific repo names ahead of the
     // score-based ranking, then fill the rest by score.
     const pinned = (x?.pinned ?? []).map((n) => repos.find((r) => r.name === n)).filter(Boolean) as typeof repos;
@@ -139,6 +142,13 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
     </div>
   </header>
 
+  ${provenanceBadges.length ? `<div class="lh-prov" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em">
+    ${provenanceBadges.map((b) => {
+      const tone = b.tone === 'positive' ? 'background:#fff;border:1px solid #c0392b;color:#c0392b' : b.tone === 'milestone' ? 'background:#111;color:#f5f1e8;border:1px solid #111' : 'background:transparent;border:1px solid #c9bfa3;color:#444';
+      return `<span title="${escapeAttr(b.detail)}" style="${tone};padding:5px 10px;text-transform:uppercase;font-weight:700;cursor:help">★ ${escapeHtml(b.label)}</span>`;
+    }).join('')}
+  </div>` : ''}
+
   <h2>About</h2>
   <p class="lh-about">${
     isOrgOrUser
@@ -182,6 +192,61 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
     ${langList.map(([l, c]) => `<div class="lh-skill"><span class="lname">${escapeHtml(l)}</span><span class="lbar"><i style="width:${Math.round((c / topLangCount) * 100)}%"></i></span><span class="lcount">${c} repo${c === 1 ? '' : 's'}</span></div>`).join('')}
   </div>` : ''}
 
+  ${timeline?.milestones?.length ? `<h2>Career, in public commits</h2>
+  <ol style="font-family:Fraunces,Georgia,serif;font-size:15px;line-height:1.55;list-style:none;padding:0;margin:0;border-top:1px solid #c9bfa3">
+    ${timeline.milestones.map((m) => `<li style="display:grid;grid-template-columns:90px 1fr;gap:18px;padding:10px 0;border-bottom:1px dotted #c9bfa3;align-items:baseline">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#c0392b;font-weight:700">${m.year}</span>
+      <span>${escapeHtml(m.label)}${m.repo ? ` <a href="${escapeAttr(m.repo.html_url)}" target="_blank" rel="noreferrer" style="color:#c0392b;text-decoration:none;border-bottom:1px solid currentColor;font-style:italic">${escapeHtml(m.repo.name)}</a>` : ''}</span>
+    </li>`).join('')}
+  </ol>` : ''}
+
+  ${x?.experience?.length ? `<h2>Experience</h2>
+  <ol style="font-family:Fraunces,Georgia,serif;font-size:15px;line-height:1.55;list-style:none;padding:0;margin:0">
+    ${x.experience.map((e) => `<li style="padding:12px 0;border-bottom:1px dotted #c9bfa3">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap"><b style="font-style:italic">${escapeHtml(e.role)}${e.org ? ` <span style="font-style:normal;color:#444">·</span> ${e.href ? `<a href="${escapeAttr(e.href)}" target="_blank" rel="noreferrer" style="color:#c0392b;text-decoration:none;border-bottom:1px solid currentColor">${escapeHtml(e.org)}</a>` : escapeHtml(e.org)}` : ''}</b>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666">${escapeHtml(e.from ?? '')}${e.to ? ` – ${escapeHtml(e.to)}` : e.from ? ' – present' : ''}</span></div>
+      ${e.summary ? `<p style="margin-top:4px;font-size:14px;color:#333">${escapeHtml(e.summary)}</p>` : ''}
+    </li>`).join('')}
+  </ol>` : ''}
+
+  ${x?.education?.length ? `<h2>Education</h2>
+  <ol style="font-family:Fraunces,Georgia,serif;font-size:15px;line-height:1.55;list-style:none;padding:0;margin:0">
+    ${x.education.map((e) => `<li style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dotted #c9bfa3;gap:12px;flex-wrap:wrap">
+      <span><b style="font-style:italic">${escapeHtml(e.org)}</b>${e.degree ? ` <span style="color:#444">·</span> ${escapeHtml(e.degree)}` : ''}</span>
+      ${e.date ? `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666">${escapeHtml(e.date)}</span>` : ''}
+    </li>`).join('')}
+  </ol>` : ''}
+
+  ${externalContribs.length ? `<h2>Working with the world</h2>
+  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;letter-spacing:.04em;margin:-6px 0 12px">Merged PRs into repos this person doesn't own — proof of work outside their own org.</p>
+  <ol style="font-family:Fraunces,Georgia,serif;font-size:15px;line-height:1.55;list-style:none;padding:0;margin:0">
+    ${externalContribs.map((c) => `<li style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dotted #c9bfa3;align-items:baseline;gap:14px;flex-wrap:wrap">
+      <span><b style="font-style:italic"><a href="https://github.com/${escapeAttr(c.org)}" target="_blank" rel="noreferrer" style="color:#c0392b;text-decoration:none;border-bottom:1px solid currentColor">${escapeHtml(c.org)}</a></b><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;margin-left:10px">${c.topRepos.slice(0, 3).map((r) => `<a href="${escapeAttr(r.html_url)}" target="_blank" rel="noreferrer" style="color:#666;text-decoration:none;border-bottom:1px dotted #999">${escapeHtml(r.name)}</a>`).join(' · ')}</span></span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#444;font-feature-settings:'tnum'">${c.contributions} merged PR${c.contributions === 1 ? '' : 's'}</span>
+    </li>`).join('')}
+  </ol>` : ''}
+
+  ${x?.talks?.length ? `<h2>Talks</h2>
+  <ol style="font-family:Fraunces,Georgia,serif;font-size:15px;line-height:1.55;list-style:none;padding:0;margin:0">
+    ${x.talks.map((t) => `<li style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dotted #c9bfa3;gap:12px;flex-wrap:wrap;align-items:baseline">
+      <span><b style="font-style:italic">${t.href ? `<a href="${escapeAttr(t.href)}" target="_blank" rel="noreferrer" style="color:#111;text-decoration:none;border-bottom:1px solid #c0392b">${escapeHtml(t.title)}</a>` : escapeHtml(t.title)}</b>${t.venue ? ` <span style="color:#444">·</span> ${escapeHtml(t.venue)}` : ''}</span>
+      ${t.date ? `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666">${escapeHtml(t.date)}</span>` : ''}
+    </li>`).join('')}
+  </ol>` : ''}
+
+  ${x?.writing?.length ? `<h2>Writing</h2>
+  <ol style="font-family:Fraunces,Georgia,serif;font-size:15px;line-height:1.55;list-style:none;padding:0;margin:0">
+    ${x.writing.map((p) => `<li style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dotted #c9bfa3;gap:12px;flex-wrap:wrap;align-items:baseline">
+      <span><b style="font-style:italic"><a href="${escapeAttr(p.href)}" target="_blank" rel="noreferrer" style="color:#111;text-decoration:none;border-bottom:1px solid #c0392b">${escapeHtml(p.title)}</a></b>${p.publisher ? ` <span style="color:#444">·</span> ${escapeHtml(p.publisher)}` : ''}</span>
+      ${p.date ? `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#666">${escapeHtml(p.date)}</span>` : ''}
+    </li>`).join('')}
+  </ol>` : ''}
+
+  ${x?.endorsements?.length ? `<h2>What people say</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;font-family:Fraunces,Georgia,serif;font-size:15px;line-height:1.55">
+    ${x.endorsements.map((e) => `<blockquote style="margin:0;padding:14px 16px;border-left:3px solid #c0392b;background:rgba(192,57,43,.04);font-style:italic">"${escapeHtml(e.blurb)}"<footer style="margin-top:8px;font-style:normal;font-family:'JetBrains Mono',monospace;font-size:11px;color:#444;letter-spacing:.02em">— <b>${escapeHtml(e.from)}</b>${e.role ? `, ${escapeHtml(e.role)}` : ''}${e.github ? ` · <a href="https://github.com/${escapeAttr(e.github)}" target="_blank" rel="noreferrer" style="color:#c0392b;text-decoration:none">@${escapeHtml(e.github)}</a>` : ''}</footer></blockquote>`).join('')}
+  </div>` : ''}
+
   ${tops.length ? `<h2>Selected Works</h2>
   <ol class="lh-repos">
     ${tops.map((r, i) => `<li>
@@ -191,6 +256,22 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
       <span class="rmeta">${relativeDate(r.pushed_at ?? r.updated_at)}</span>
     </li>`).join('')}
   </ol>` : ''}
+
+  ${!isRepo && !x ? `<div class="lh-cta" style="margin-top:32px;padding:24px;background:linear-gradient(135deg,#fff8eb,#f5e8c8);color:#111;border:1px solid #c9bfa3;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center">
+    <div>
+      <h3 style="font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:900;font-size:22px;color:#c0392b">Is this you? Customise your Devprint.</h3>
+      <p style="font-size:13px;color:#444;margin-top:6px;max-width:60ch;font-family:Inter,sans-serif">
+        Add a tagline, what you're available for, your career history, talks, writing, and endorsements. Devprint reads
+        a small JSON file from <code style="font-family:'JetBrains Mono',monospace;background:#fff;border:1px solid #c9bfa3;padding:1px 6px">${escapeHtml(profile.login)}/.github/devprint.json</code>,
+        <code style="font-family:'JetBrains Mono',monospace;background:#fff;border:1px solid #c9bfa3;padding:1px 6px">${escapeHtml(profile.login)}/${escapeHtml(profile.login)}/devprint.json</code>, or
+        the easiest path — fork our template repo to <code style="font-family:'JetBrains Mono',monospace;background:#fff;border:1px solid #c9bfa3;padding:1px 6px">${escapeHtml(profile.login)}/devprint</code>.
+      </p>
+    </div>
+    <div class="lh-buttons" style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
+      <a class="lh-btn" href="/customise.html" style="text-align:center;background:#c0392b;color:#fff;border-color:#c0392b">Customise →</a>
+      <a class="lh-btn outline" href="https://github.com/jhammant/devprint/blob/main/docs/DEVPRINT_JSON.md" target="_blank" rel="noreferrer" style="text-align:center;background:transparent;color:#111;border-color:#111">Read the schema</a>
+    </div>
+  </div>` : ''}
 
   <div class="lh-cta">
     <div>
@@ -205,6 +286,7 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
       <button class="lh-btn outline" type="button" data-action="save-png">Save PNG</button>
       <button class="lh-btn outline" type="button" data-action="copy-link">Copy link</button>
       <button class="lh-btn outline" type="button" data-action="print">Print as PDF</button>
+      <a class="lh-btn outline" href="/${escapeAttr(target)}.resume.json" target="_blank" rel="noreferrer">JSON Resume</a>
     </div>
   </div>
 

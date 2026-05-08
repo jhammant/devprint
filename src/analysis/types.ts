@@ -19,6 +19,8 @@ export type GhRepo = {
   watchers_count: number;
   open_issues_count: number;
   fork: boolean;
+  /** ISO 8601 timestamp the repo was created — used for career timelines. */
+  created_at?: string;
   updated_at: string;
   // pushed_at = last commit on the default branch. updated_at = any metadata
   // change (description edit, star count tick, transfer, etc.). For "is this

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://devprint.dev/schema/devprint.json",
+
+  "tagline": "Hands-on engineer · shipping public",
+  "status": "Open to advisor chats",
+  "about": "Replace this with one short paragraph in your own voice. Devprint shows the public-data parts (repos, stars, languages) on its own — this is where you say the human stuff a hiring manager can't get from /api.",
+  "now": "What you're up to today, in one line.",
+  "available": "Advisory · short consulting · speaking",
+  "ask": "If you're working on X and you've hit Y, I'd love to compare notes.",
+  "contact": "you@example.dev",
+
+  "pinned": [
+    "your-best-repo",
+    "another-strong-repo"
+  ],
+
+  "skills": [
+    "TypeScript",
+    "AWS",
+    "Distributed systems"
+  ],
+
+  "highlights": [
+    "Shipped X in two weeks (link to it)",
+    "Maintainer of Y (#stars+ stars)",
+    "Open-sourced Z used by N teams"
+  ],
+
+  "experience": [
+    {
+      "role": "Founding engineer",
+      "org": "Cool Co",
+      "from": "2024",
+      "to": "present",
+      "summary": "What you owned. What you shipped. What broke.",
+      "href": "https://example.com"
+    },
+    {
+      "role": "Senior engineer",
+      "org": "Previous Place",
+      "from": "2020",
+      "to": "2024",
+      "summary": "One-line distillation of impact."
+    }
+  ],
+
+  "education": [
+    {
+      "degree": "BSc Computer Science",
+      "org": "University of X",
+      "date": "2014-2018"
+    }
+  ],
+
+  "talks": [
+    {
+      "title": "Shipping CVs that update themselves",
+      "venue": "DevConf 2025",
+      "date": "2025-09",
+      "href": "https://example.com/talk-link"
+    }
+  ],
+
+  "writing": [
+    {
+      "title": "How Devprint works under the hood",
+      "publisher": "Personal blog",
+      "date": "2025-10",
+      "href": "https://example.com/post"
+    }
+  ],
+
+  "endorsements": [
+    {
+      "from": "Jane Maintainer",
+      "role": "Eng lead at Significant Co",
+      "github": "janemaintainer",
+      "blurb": "Ships fast, writes the documentation everyone forgets, and is the reason our migration didn't catch fire."
+    }
+  ],
+
+  "links": [
+    { "name": "Site",     "href": "https://example.dev" },
+    { "name": "X",        "href": "https://x.com/handle" },
+    { "name": "Mastodon", "href": "https://mastodon.social/@handle" },
+    { "name": "LinkedIn", "href": "https://linkedin.com/in/handle" }
+  ]
+}

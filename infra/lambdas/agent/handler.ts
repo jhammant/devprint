@@ -1,6 +1,7 @@
 import {
   GitHubError,
   applyTaskOverlay,
+  buildJsonResume,
   buildReceiptPack,
   buildRepoInsights,
   buildRepoPack,
@@ -114,6 +115,36 @@ export async function handle(
         });
         return jsonInsights(insights);
       }
+      case 'user-resume': {
+        if (await isOptedOut(deps.client, { kind: 'user', user: route.user })) {
+          return optedOut(route.user);
+        }
+        const [profile, repos, insights] = await Promise.all([
+          deps.client.getUser(route.user),
+          deps.client.listUserRepos(route.user, { max: 100 }),
+          buildUserInsights(deps.client, route.user, {
+            ...(deps.now ? { generatedAt: deps.now() } : {}),
+          }),
+        ]);
+        const resume = buildJsonResume({
+          profile,
+          repos,
+          insights,
+          url: `https://devprint.dev/${route.user}`,
+        });
+        return {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+            'Content-Disposition': `inline; filename="${route.user}.resume.json"`,
+            'X-Devprint-Target': route.user,
+            'X-Devprint-Kind': 'user-resume',
+          },
+          body: JSON.stringify(resume, null, 2),
+        };
+      }
       case 'vs':
         return notImplemented('vs');
     }
@@ -160,6 +191,7 @@ function targetFromRoute(r: AgentRoute): string {
   switch (r.kind) {
     case 'user':
     case 'user-insights':
+    case 'user-resume':
       return r.user;
     case 'repo':
     case 'repo-agents':

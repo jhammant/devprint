@@ -72,7 +72,18 @@ export type {
   RelatedProfile,
   BuildInsightsOptions,
   ProfileExtra,
+  ProfileExperience,
+  ProfileTalk,
+  ProfileWriting,
+  ProfileEducation,
+  ProfileEndorsement,
+  ExternalContribOrg,
+  ProvenanceBadge,
 } from './insights.ts';
+export type { CareerTimeline, CareerMilestone, LangYearShare } from './timeline.ts';
+export { buildCareerTimeline } from './timeline.ts';
+export { buildJsonResume } from './resume.ts';
+export type { JsonResume } from './resume.ts';
 
 export { isOptedOut, STATIC_OPTOUT } from './optout.ts';
 export type { OptOutTarget } from './optout.ts';
