@@ -29,6 +29,7 @@ function mockClient(over: Partial<GhClient> = {}): GhClient {
     getRepoHeadSha: async () => undefined,
     getRecentCommits: async () => [],
     getCommitActivity: async () => undefined,
+    getContributors: async () => [],
     ...over,
   };
 }
@@ -54,6 +55,24 @@ describe('buildUserPack', () => {
     // Re-derive the body by stripping the footer and assert determinism.
     const footerIdx = pack.markdown.indexOf('\n---\n\n> _Devprint pack provenance_');
     expect(footerIdx).toBeGreaterThan(0);
+  });
+
+  it('discloses sample-bias when the analysis hits the 100-repo cap', async () => {
+    const profileBig: GhUser = { ...profile, public_repos: 1100 };
+    const repos = Array.from({ length: 100 }, (_, i) =>
+      baseRepo({ name: `r${i}`, full_name: `jhammant/r${i}` }),
+    );
+    const c = mockClient({
+      getUser: async () => profileBig,
+      listUserRepos: async () => repos,
+    });
+    const pack = await buildUserPack(c, 'jhammant', { toolVersion: '0.1.0' });
+    expect(pack.markdown).toContain('top 100 of 1100 by recency');
+  });
+
+  it('does NOT show truncation note when repos.length < 100', async () => {
+    const pack = await buildUserPack(mockClient(), 'jhammant', { toolVersion: '0.1.0' });
+    expect(pack.markdown).not.toContain('top 100 of');
   });
 });
 

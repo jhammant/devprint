@@ -283,11 +283,19 @@ function renderUserMarkdown(m: UserRender): string {
   lines.push('');
   lines.push(`Purpose: brief an AI coding agent on ${m.profile.name ?? m.profile.login}'s public GitHub footprint.`);
   lines.push('');
+  // Disclose sample-bias when the analysis hits the 100-repo cap. Without
+  // this the "Stars observed" total reflects the whole portfolio while the
+  // repo count silently truncates — confusing for any reader.
+  const truncated = m.repos.length >= 100 && (m.profile.public_repos ?? 0) > 100;
+  const reposAnalysedLine = truncated
+    ? `- Public repos analysed: ${m.repos.length} (top ${m.repos.length} of ${m.profile.public_repos} by recency)`
+    : `- Public repos analysed: ${m.repos.length}`;
+
   lines.push('## Target');
   lines.push(`- Type: GitHub user`);
   lines.push(`- GitHub: https://github.com/${m.target}`);
   lines.push(`- Owner: ${m.profile.login}`);
-  lines.push(`- Public repos analysed: ${m.repos.length}`);
+  lines.push(reposAnalysedLine);
   lines.push(`- Stars observed across portfolio: ${m.totalStars}`);
   lines.push('');
   lines.push('## High-level read');

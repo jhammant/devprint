@@ -23,6 +23,7 @@ function client(over: Partial<GhClient> = {}): GhClient {
     getRepoHeadSha: async () => 'abc123',
     getRecentCommits: async () => [],
     getCommitActivity: async () => undefined,
+    getContributors: async () => [],
     ...over,
   };
 }

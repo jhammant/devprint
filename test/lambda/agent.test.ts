@@ -28,6 +28,7 @@ function client(over: Partial<GhClient> = {}): GhClient {
     getRepoHeadSha: async () => undefined,
     getRecentCommits: async () => [],
     getCommitActivity: async () => undefined,
+    getContributors: async () => [],
     ...over,
   };
 }
@@ -195,6 +196,32 @@ describe('agent handler', () => {
     expect(detected).toContain('Tailwind');
     expect(body.commitActivity).toHaveLength(2);
     expect(body.commitActivitySource).toMatch(/^jhammant\//);
+  });
+
+  it('returns aggregated commitActivity + relatedProfiles in user-insights JSON', async () => {
+    const c = client({
+      listUserRepos: async () => [
+        baseRepo({ name: 'a', full_name: 'jhammant/a', stargazers_count: 90 }),
+        baseRepo({ name: 'b', full_name: 'jhammant/b', stargazers_count: 80 }),
+      ],
+      getRepoFile: async () => undefined,
+      getCommitActivity: async (_o, name) =>
+        name === 'a' ? [{ week: 1700000000, total: 3 }] : [{ week: 1700000000, total: 2 }],
+      getContributors: async () => [
+        { login: 'jhammant', avatar_url: '', contributions: 100 },
+        { login: 'alice', avatar_url: 'a.png', contributions: 50 },
+      ],
+    });
+    const res = await handle(
+      { method: 'GET', path: '/jhammant.json', search: '', headers: {} },
+      { client: c, toolVersion: '0.1.0' },
+    );
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.commitActivity[0].total).toBe(5); // 3 + 2 same week
+    const logins = body.relatedProfiles.map((p: { login: string }) => p.login);
+    expect(logins).not.toContain('jhammant');
+    expect(logins).toContain('alice');
   });
 
   it('returns repo-insights JSON for /<u>/<r>.json with commit-style + heatmap', async () => {

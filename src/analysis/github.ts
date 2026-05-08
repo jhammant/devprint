@@ -1,4 +1,4 @@
-import type { GhRepo, GhUser, RepoFile } from './types.ts';
+import type { GhContributor, GhRepo, GhUser, RepoFile } from './types.ts';
 
 export type FetchImpl = typeof fetch;
 
@@ -38,6 +38,11 @@ export type GhClient = {
     owner: string,
     repo: string,
   ): Promise<Array<{ week: number; total: number }> | undefined>;
+  getContributors(
+    owner: string,
+    repo: string,
+    limit?: number,
+  ): Promise<GhContributor[]>;
 };
 
 const PACKAGE_FILES = [
@@ -167,6 +172,28 @@ export function createGitHubClient(opts: GhClientOptions = {}): GhClient {
       const json = (await r.json()) as Array<{ week: number; total: number; days?: number[] }>;
       if (!Array.isArray(json) || json.length === 0) return undefined;
       return json.map((w) => ({ week: w.week, total: w.total }));
+    },
+    async getContributors(owner, repo, limit) {
+      const perPage = Math.min(Math.max(limit ?? 10, 1), 100);
+      type GhContributorApi = {
+        login?: string | null;
+        avatar_url?: string | null;
+        contributions?: number | null;
+        type?: string;
+      };
+      const list = await getOptional<GhContributorApi[]>(
+        `https://api.github.com/repos/${enc(owner)}/${enc(repo)}/contributors?per_page=${perPage}&anon=false`,
+      );
+      if (!list) return [];
+      return list
+        // Skip the synthetic "[bot]" contributor entries — they're noise for a
+        // "people often building with this person" panel.
+        .filter((c) => c.login && c.type !== 'Bot' && !c.login.endsWith('[bot]'))
+        .map((c) => ({
+          login: c.login as string,
+          avatar_url: c.avatar_url ?? '',
+          contributions: c.contributions ?? 0,
+        }));
     },
   };
 }

@@ -83,4 +83,26 @@ body.has-result .result{margin-top:10px}
 .commit-samples code{background:rgba(7,9,19,.6);border:1px solid rgba(255,255,255,.08);color:#dce6ff;padding:6px 10px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;display:block;overflow:auto}
 /* heatmap */
 .heatmap-summary{margin-top:8px;font-size:12px;text-align:right}
+/* universal link styling — every repo / contributor mention is a real
+   GitHub link. Brand cyan + dashed underline so they're discoverable but
+   don't drown the page. */
+.card a{color:var(--cyan);text-decoration:none;border-bottom:1px dashed rgba(49,217,255,.3);transition:color .15s ease,border-color .15s ease}
+.card a:hover{color:#a5edff;border-bottom-color:rgba(49,217,255,.7)}
+/* Anchors that wrap a whole .repo card or contributor chip shouldn't get
+   the underline — they have their own visual treatment. */
+.card a.repo,.card a.related-chip-main,.card .stack-chip a,.card .repo a,.card .stat a{border-bottom:0}
+.card a.repo:hover{color:inherit}
+/* battle card stat tooltips */
+.trump-stat[title]{cursor:help}
+.trump-stat[title]:hover{border-color:rgba(255,255,255,.22)}
+/* related profiles panel */
+#relatedBody{display:flex;flex-wrap:wrap;gap:10px}
+.related-chip{display:inline-flex;align-items:center;gap:0;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:0;overflow:hidden;transition:transform .15s ease,border-color .15s ease}
+.related-chip:hover{transform:translateY(-1px);border-color:rgba(49,217,255,.4)}
+.related-chip-main{display:inline-flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;color:#e9eeff;text-decoration:none;border-bottom:0}
+.related-chip-main img{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.08);object-fit:cover}
+.related-login{font-weight:700;font-size:13px}
+.related-chip-devprint{display:inline-flex;align-items:center;padding:5px 11px;background:rgba(49,217,255,.1);color:#c7f6ff;font-size:11px;font-weight:800;border-left:1px solid rgba(255,255,255,.1);border-bottom:0;text-decoration:none;letter-spacing:.04em}
+.related-chip-devprint:hover{background:rgba(49,217,255,.22);color:white}
+.related-via{display:none}
 @media(max-width:900px){.hero,.grid,.grid2{grid-template-columns:1fr}.preview{order:-1}.search{flex-direction:column}button{padding:15px}.repos{grid-template-columns:1fr}.barline{grid-template-columns:90px 1fr 34px}.nav{align-items:flex-start;flex-direction:column;margin-bottom:30px}.stack-repo-row{grid-template-columns:1fr}}

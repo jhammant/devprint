@@ -20,9 +20,19 @@ export type GhRepo = {
   open_issues_count: number;
   fork: boolean;
   updated_at: string;
+  // pushed_at = last commit on the default branch. updated_at = any metadata
+  // change (description edit, star count tick, transfer, etc.). For "is this
+  // repo actually maintained?" charts the pushed_at axis is much cleaner.
+  pushed_at?: string;
   default_branch?: string;
   topics?: string[];
   license?: { spdx_id: string | null; name: string } | null;
+};
+
+export type GhContributor = {
+  login: string;
+  avatar_url: string;
+  contributions: number;
 };
 
 export type RepoFile = { path: string; content: string };

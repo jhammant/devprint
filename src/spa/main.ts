@@ -1,6 +1,7 @@
 import './styles.css';
 import { toPng } from 'html-to-image';
 import {
+  BATTLE_FORMULAS,
   archetype,
   battleStats,
   cleanTarget,
@@ -8,11 +9,13 @@ import {
   getThemes,
   rankDetected,
   scoreRepo,
+  summariseThemes,
   type CommitActivityWeek,
   type DetectedTech,
   type GhRepo,
   type GhUser,
   type Insights,
+  type RelatedProfile,
   type StackInference,
 } from '../analysis/index.ts';
 
@@ -69,7 +72,7 @@ app.innerHTML = `
     <div><div class="eyebrow" id="eyebrow"></div><h1 class="h1" id="heroTitle"></h1><p class="lead" id="heroLead"></p><form class="search" id="form"><input id="target" placeholder="github.com/jhammant or jhammant/factcheck" autocomplete="off" /><button id="go">Generate</button></form><div class="examples"><span class="chip" data-target="jhammant">jhammant</span><span class="chip" data-target="jhammant/factcheck">jhammant/factcheck</span><span class="chip" data-target="sindresorhus">sindresorhus</span><span class="chip" data-target="facebook/react">facebook/react</span></div><div class="loading" id="loading">Fetching public GitHub data and building the artefact…</div><div class="error" id="error"></div></div>
     <div class="preview"><div class="mini"><div class="orbit"><div class="node" style="width:82px;height:82px;left:45%;top:43%"></div><div class="node" style="width:42px;height:42px;left:20%;top:56%;background:linear-gradient(135deg,var(--green),var(--cyan))"></div><div class="node" style="width:56px;height:56px;left:76%;top:35%;background:linear-gradient(135deg,var(--pink),var(--amber))"></div><div class="node" style="width:32px;height:32px;left:68%;top:75%"></div></div></div></div>
   </section>
-  <section class="result" id="result"><div class="grid"><aside class="card"><div class="profile"><img class="avatar" id="avatar" alt="" crossorigin="anonymous"><div><div class="name" id="displayName"></div><div class="muted" id="handle"></div></div></div><div class="stats"><div class="stat"><b id="repoCount">–</b><span class="muted" id="stat1Label">repos</span></div><div class="stat"><b id="stars">–</b><span class="muted">stars</span></div><div class="stat"><b id="followers">–</b><span class="muted" id="stat3Label">followers</span></div></div><hr style="border:0;border-top:1px solid rgba(255,255,255,.09);margin:18px 0"><div class="muted" id="archetypeLabel">Builder archetype</div><div class="archetype" id="archetype">–</div><p class="insight" id="summary"></p><div class="trump"><div class="trump-head"><div class="trump-title" id="battleTitle">Builder Battle Card</div><div class="trump-badge" id="trumpTier">Rare</div></div><div class="trump-grid"><div class="trump-stat"><span>Build Power</span><b id="tcBuild">–</b></div><div class="trump-stat"><span>Impact</span><b id="tcImpact">–</b></div><div class="trump-stat"><span>Versatility</span><b id="tcVersatility">–</b></div><div class="trump-stat"><span>Momentum</span><b id="tcMomentum">–</b></div><div class="trump-stat"><span>Community</span><b id="tcCommunity">–</b></div><div class="trump-stat"><span>Originality</span><b id="tcOriginality">–</b></div></div><div class="trump-special" id="tcSpecial"></div></div></aside><div class="card"><div class="section-title"><h2 id="mainPanelTitle">Builder graph</h2><div class="copyrow"><button class="share" id="copyAgent">Copy pack</button><button class="share" id="share">Copy link</button><button class="share" id="savePng" title="Download battle card as PNG">Save PNG</button><button class="share" id="tweet" title="Share on X">Tweet</button><button class="share share-primary" id="nativeShare" title="Open share sheet">Share</button></div></div><div class="canvas" id="graph"></div><pre class="agentpack hidden" id="agentPack"></pre></div></div><div class="card" id="insightsCard" style="margin-top:18px"><div class="section-title"><h2>Insights</h2><div class="muted" id="insightsTagline" style="font-size:13px"></div></div><div class="insights" id="insights"></div></div><div class="card hidden" id="stackCard" style="margin-top:18px"><div class="section-title"><h2 id="stackTitle">Detected stack</h2><span class="muted" id="stackSubtitle" style="font-size:12px"></span></div><div id="stackBody"></div></div><div class="card hidden" id="commitCard" style="margin-top:18px"><div class="section-title"><h2>Commit style</h2><span class="muted" id="commitMeta" style="font-size:12px"></span></div><div id="commitBody"></div></div><div class="card hidden" id="heatmapCard" style="margin-top:18px"><div class="section-title"><h2 id="heatmapTitle">Commit heatmap, last 52 weeks</h2><span class="muted" id="heatmapMeta" style="font-size:12px"></span></div><div class="diag" id="heatmapDiag"></div></div><div class="grid2" id="userActivityRow" style="margin-top:18px"><div class="card"><div class="section-title"><h2>Activity, last 24 months</h2><span class="muted" id="activityCaption" style="font-size:12px"></span></div><div class="diag" id="activityDiag"></div></div><div class="card"><div class="section-title"><h2>Repo health</h2><span class="muted" style="font-size:12px">stars × recency × forks</span></div><div class="diag" id="healthDiag"></div></div></div><div class="grid2"><div class="card"><div class="section-title"><h2>Strengths with evidence</h2></div><div class="bars" id="strengths"></div></div><div class="card"><div class="section-title"><h2>Theme clusters</h2></div><div class="tags" id="themes"></div></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2 id="projectsTitle">Most interesting public projects</h2></div><div class="repos" id="repos"></div></div></section>
+  <section class="result" id="result"><div class="grid"><aside class="card"><div class="profile"><img class="avatar" id="avatar" alt="" crossorigin="anonymous"><div><div class="name" id="displayName"></div><div class="muted" id="handle"></div></div></div><div class="stats"><div class="stat"><b id="repoCount">–</b><span class="muted" id="stat1Label">repos</span></div><div class="stat"><b id="stars">–</b><span class="muted">stars</span></div><div class="stat"><b id="followers">–</b><span class="muted" id="stat3Label">followers</span></div></div><hr style="border:0;border-top:1px solid rgba(255,255,255,.09);margin:18px 0"><div class="muted" id="archetypeLabel">Builder archetype</div><div class="archetype" id="archetype">–</div><p class="insight" id="summary"></p><div class="trump"><div class="trump-head"><div class="trump-title" id="battleTitle">Builder Battle Card</div><div class="trump-badge" id="trumpTier">Rare</div></div><div class="trump-grid"><div class="trump-stat" id="tcBuildBox" data-stat="build"><span>Build Power</span><b id="tcBuild">–</b></div><div class="trump-stat" id="tcImpactBox" data-stat="impact"><span>Impact</span><b id="tcImpact">–</b></div><div class="trump-stat" id="tcVersBox" data-stat="versatility"><span>Versatility</span><b id="tcVersatility">–</b></div><div class="trump-stat" id="tcMomentumBox" data-stat="momentum"><span>Momentum</span><b id="tcMomentum">–</b></div><div class="trump-stat" id="tcCommunityBox" data-stat="community"><span>Community</span><b id="tcCommunity">–</b></div><div class="trump-stat" id="tcOriginalityBox" data-stat="originality"><span>Originality</span><b id="tcOriginality">–</b></div></div><div class="trump-special" id="tcSpecial"></div></div></aside><div class="card"><div class="section-title"><h2 id="mainPanelTitle">Builder graph</h2><div class="copyrow"><button class="share" id="copyAgent">Copy pack</button><button class="share" id="share">Copy link</button><button class="share" id="savePng" title="Download battle card as PNG">Save PNG</button><button class="share" id="tweet" title="Share on X">Tweet</button><button class="share share-primary" id="nativeShare" title="Open share sheet">Share</button></div></div><div class="canvas" id="graph"></div><pre class="agentpack hidden" id="agentPack"></pre></div></div><div class="card" id="insightsCard" style="margin-top:18px"><div class="section-title"><h2>Insights</h2><div class="muted" id="insightsTagline" style="font-size:13px"></div></div><div class="insights" id="insights"></div></div><div class="card hidden" id="stackCard" style="margin-top:18px"><div class="section-title"><h2 id="stackTitle">Detected stack</h2><span class="muted" id="stackSubtitle" style="font-size:12px"></span></div><div id="stackBody"></div></div><div class="card hidden" id="commitCard" style="margin-top:18px"><div class="section-title"><h2>Commit style</h2><span class="muted" id="commitMeta" style="font-size:12px"></span></div><div id="commitBody"></div></div><div class="card hidden" id="heatmapCard" style="margin-top:18px"><div class="section-title"><h2 id="heatmapTitle">Commit heatmap, last 52 weeks</h2><span class="muted" id="heatmapMeta" style="font-size:12px"></span></div><div class="diag" id="heatmapDiag"></div></div><div class="card hidden" id="relatedCard" style="margin-top:18px"><div class="section-title"><h2 id="relatedTitle">Often building with</h2><span class="muted" id="relatedMeta" style="font-size:12px"></span></div><div id="relatedBody"></div></div><div class="grid2" id="userActivityRow" style="margin-top:18px"><div class="card"><div class="section-title"><h2>Activity, last 24 months</h2><span class="muted" id="activityCaption" style="font-size:12px"></span></div><div class="diag" id="activityDiag"></div></div><div class="card"><div class="section-title"><h2>Repo health</h2><span class="muted" style="font-size:12px">stars × recency × forks</span></div><div class="diag" id="healthDiag"></div></div></div><div class="grid2"><div class="card"><div class="section-title"><h2>Strengths with evidence</h2></div><div class="bars" id="strengths"></div></div><div class="card"><div class="section-title"><h2>Theme clusters</h2></div><div class="tags" id="themes"></div></div></div><div class="card" style="margin-top:18px"><div class="section-title"><h2 id="projectsTitle">Most interesting public projects</h2></div><div class="repos" id="repos"></div></div></section>
   <div class="footer">Static-first MVP. Deployed on AWS via SST. Agent endpoint at <code>agents.devprint.dev</code>.</div>
 </div>`;
 
@@ -143,16 +146,12 @@ async function build(raw: string, scroll = true) {
     renderStrengths(topLangs);
     renderThemes(themes);
     renderRepos(repos, isRepo);
-    // User-only panels: insights tagline, activity-by-month, and repo health
-    // are all derived from the listUserRepos response and don't make sense on
-    // a single-repo page. Hide their parent cards entirely so a repo page
-    // doesn't show three big empty panels.
+    // User-only panels: insights tagline is derived from the user-portfolio
+    // listUserRepos response and doesn't apply to single-repo pages. Hide it
+    // so a repo page doesn't show one empty bordered box.
     $('insightsCard').classList.toggle('hidden', isRepo);
-    $('userActivityRow').classList.toggle('hidden', isRepo);
     if (!isRepo) {
       renderInsights(profile, repos, totalStars);
-      renderActivity(repos);
-      renderHealth(repos);
     }
 
     // Fetch the agent pack + structured insights from the Lambda in parallel.
@@ -166,9 +165,21 @@ async function build(raw: string, scroll = true) {
     lastPack = packResult ?? `# Devprint Agent Pack: ${target}\n\nThe agent pack endpoint is currently unreachable. Try again in a moment.\n`;
     $('agentPack').textContent = lastPack;
 
-    renderStack(insights, isRepo);
+    renderStack(insights, isRepo, owner);
     renderCommitStyle(insights, isRepo);
     renderHeatmap(insights);
+    renderRelated(insights, isRepo);
+    // Activity + health both depend on the JSON sidecar's commit-activity /
+    // need a real subset of repos; renderActivity / renderHealth handle their
+    // own visibility (hide the parent .card when there's no data).
+    if (isRepo) {
+      // Repo pages: hide the user-activity row entirely; nothing here applies.
+      $('userActivityRow').classList.add('hidden');
+    } else {
+      $('userActivityRow').classList.remove('hidden');
+      renderActivity(insights);
+      renderHealth(repos);
+    }
 
     const agent = currentMode === 'agent';
     $('graph').classList.toggle('hidden', agent);
@@ -196,7 +207,14 @@ function renderProfile(
   repos: GhRepo[], topLangs: [string, number][],
 ) {
   $('avatar').setAttribute('src', profile.avatar_url);
-  $('displayName').textContent = isRepo ? repo!.full_name : (profile.name || profile.login);
+  // Display name is now a clickable link to the canonical GitHub URL —
+  // either the user's profile or the repo. innerHTML (not textContent) so the
+  // anchor renders as a real link.
+  if (isRepo) {
+    $('displayName').innerHTML = `<a href="https://github.com/${escapeAttr(repo!.full_name)}" target="_blank" rel="noreferrer">${escapeHtml(repo!.full_name)}</a>`;
+  } else {
+    $('displayName').innerHTML = `<a href="https://github.com/${escapeAttr(profile.login)}" target="_blank" rel="noreferrer">${escapeHtml(profile.name || profile.login)}</a>`;
+  }
   $('handle').textContent = isRepo ? (repo!.description || 'Repository fingerprint') : '@' + profile.login;
   $('repoCount').textContent = isRepo ? String(repo!.open_issues_count || 0) : String(profile.public_repos);
   $('stat1Label').textContent = isRepo ? 'open issues' : 'repos';
@@ -206,9 +224,13 @@ function renderProfile(
   $('archetypeLabel').textContent = isRepo ? 'Repo archetype' : 'Builder archetype';
   $('archetype').textContent = arch;
   const top = topLangs.slice(0, 3).map((x) => x[0]).join(', ') || 'multiple stacks';
+  // Honest disclosure when the analysis hits the 100-repo cap.
+  const truncationNote = !isRepo && repos.length >= 100 && profile.public_repos > 100
+    ? ` (top ${repos.length} of ${profile.public_repos} by recency)`
+    : '';
   $('summary').textContent = isRepo
-    ? `${repo!.full_name} looks like a ${arch.toLowerCase()} with ${repo!.stargazers_count} stars, ${repo!.forks_count} forks, and recent activity last seen ${new Date(repo!.updated_at).toLocaleDateString()}.`
-    : `${profile.name || profile.login} looks like a ${arch.toLowerCase()} working mostly across ${top}. The public footprint points to ${themes[0]?.[0]?.toLowerCase() || 'practical'} work, with ${repos.length} non-fork repos analysed.`;
+    ? `${repo!.full_name} looks like a ${arch.toLowerCase()} with ${repo!.stargazers_count} stars, ${repo!.forks_count} forks, and recent activity last seen ${new Date(repo!.pushed_at ?? repo!.updated_at).toLocaleDateString()}.`
+    : `${profile.name || profile.login} looks like a ${arch.toLowerCase()} working mostly across ${top}. The public footprint points to ${themes[0]?.[0]?.toLowerCase() || 'practical'} work, with ${repos.length} non-fork repos analysed${truncationNote}.`;
 }
 
 function renderBattleCard(b: ReturnType<typeof battleStats>, isRepo: boolean) {
@@ -221,6 +243,16 @@ function renderBattleCard(b: ReturnType<typeof battleStats>, isRepo: boolean) {
   $('trumpTier').textContent = b.tier;
   $('battleTitle').textContent = isRepo ? 'Repo Battle Card' : 'Builder Battle Card';
   $('tcSpecial').textContent = `Special move: ${isRepo ? 'gives agents a clean starting brief' : 'keeps building until it works'}.`;
+  // Surface the formula as a tooltip on each stat. Without this the 0-99
+  // numbers read like LinkedIn buzzword bingo — opening the formula makes
+  // the scale legible (and lets viewers spot the structural bias against
+  // private-repo work).
+  $('tcBuildBox').setAttribute('title', BATTLE_FORMULAS.build);
+  $('tcImpactBox').setAttribute('title', BATTLE_FORMULAS.impact);
+  $('tcVersBox').setAttribute('title', BATTLE_FORMULAS.versatility);
+  $('tcMomentumBox').setAttribute('title', BATTLE_FORMULAS.momentum);
+  $('tcCommunityBox').setAttribute('title', BATTLE_FORMULAS.community);
+  $('tcOriginalityBox').setAttribute('title', BATTLE_FORMULAS.originality);
   // Drive tier-based glow + badge colour via a data attribute the CSS targets.
   const trump = document.querySelector('.trump');
   if (trump) trump.setAttribute('data-tier', b.tier.toLowerCase());
@@ -235,8 +267,10 @@ function renderStrengths(topLangs: [string, number][]) {
 }
 
 function renderThemes(themes: ReturnType<typeof getThemes>) {
-  const list = themes.length ? themes : ([['Open source', 1], ['Builder', 1]] as const);
-  $('themes').innerHTML = list.map(([t, n]) => `<span class="tag">${t} · ${n}</span>`).join('');
+  // Cap at top-3 (or collapse to "Generalist" when 5+ themes match) so the
+  // tags stay informative instead of becoming "every category, no signal".
+  const summarised = themes.length ? summariseThemes(themes, 3) : ([['Open source', 1], ['Builder', 1]] as const);
+  $('themes').innerHTML = summarised.map(([t, n]) => `<span class="tag">${t} · ${n}</span>`).join('');
 }
 
 function renderRepos(repos: GhRepo[], isRepo: boolean) {
@@ -252,6 +286,16 @@ function renderRepos(repos: GhRepo[], isRepo: boolean) {
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function renderInsights(profile: GhUser, repos: GhRepo[], totalStars: number) {
+  // Build a name → full_name lookup once so the markBold below can swap a
+  // bolded repo name (e.g. **awesome**) for a real link.
+  const repoByName = new Map(repos.map((r) => [r.name, r.full_name] as const));
+  const linkBold = (s: string) =>
+    s.replace(/\*\*([^*]+)\*\*/g, (_m, name: string) => {
+      const full = repoByName.get(name);
+      return full
+        ? `<a href="https://github.com/${escapeAttr(full)}" target="_blank" rel="noreferrer"><strong>${escapeHtml(name)}</strong></a>`
+        : `<strong>${escapeHtml(name)}</strong>`;
+    });
   const now = Date.now();
   const dayMs = 86_400_000;
 
@@ -317,29 +361,46 @@ function renderInsights(profile: GhUser, repos: GhRepo[], totalStars: number) {
 
   const insights = [concentrationText, maintenanceText, peakText, breadthText, forkText].filter(Boolean) as string[];
   $('insights').innerHTML = insights
-    .map((t) => `<div class="insight-line">${markBold(t)}</div>`)
+    .map((t) => `<div class="insight-line">${linkBold(t)}</div>`)
     .join('');
 }
 
-function markBold(s: string): string {
-  return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-}
+function renderActivity(insights: Insights | undefined) {
+  // Old version bucketed repos by `updated_at` and produced a single huge bar
+  // for prolific maintainers (every result clustered in the most recent
+  // month). This version uses real /stats/commit_activity from the JSON
+  // sidecar — for users it's the sum across the top 3 repos, for repos it's
+  // the single repo. If the sidecar didn't return data (e.g. cold cache or
+  // private repo) we hide the card rather than fall back to the old chart.
+  const card = document.querySelector<HTMLElement>('#userActivityRow > div:first-child');
+  const ca = insights?.commitActivity;
+  if (!ca || ca.length === 0) {
+    if (card) card.classList.add('hidden');
+    return;
+  }
+  if (card) card.classList.remove('hidden');
 
-function renderActivity(repos: GhRepo[]) {
+  // Bucket the 52 weeks into 12 months so the chart stays readable.
+  const dNow = new Date();
+  const buckets: { count: number; label: string; monthKey: string }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(dNow.getFullYear(), dNow.getMonth() - (11 - i), 1);
+    buckets.push({
+      count: 0,
+      label: `${MONTH_NAMES[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
+      monthKey: `${d.getFullYear()}-${d.getMonth()}`,
+    });
+  }
+  for (const w of ca) {
+    const d = new Date(w.week * 1000);
+    const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}`;
+    const bucket = buckets.find((b) => b.monthKey === key);
+    if (bucket) bucket.count += w.total;
+  }
+
   const W = 600;
   const H = 140;
-  const months = 24;
-  const buckets: { count: number; label: string }[] = [];
-  const dNow = new Date();
-  for (let i = 0; i < months; i++) {
-    const d = new Date(dNow.getFullYear(), dNow.getMonth() - (months - 1 - i), 1);
-    buckets.push({ count: 0, label: `${MONTH_NAMES[d.getMonth()]} ${String(d.getFullYear()).slice(2)}` });
-  }
-  for (const r of repos) {
-    const d = new Date(r.updated_at);
-    const monthsAgo = (dNow.getFullYear() - d.getFullYear()) * 12 + (dNow.getMonth() - d.getMonth());
-    if (monthsAgo >= 0 && monthsAgo < months) buckets[months - 1 - monthsAgo].count++;
-  }
+  const months = buckets.length;
   const max = Math.max(...buckets.map((b) => b.count), 1);
   const peakIdx = buckets.findIndex((b) => b.count === max);
   const padding = 28;
@@ -347,17 +408,16 @@ function renderActivity(repos: GhRepo[]) {
   const bw = innerW / months;
   const baseline = H - 28;
 
-  const bars = buckets
+  const cleanBars = buckets
     .map((b, i) => {
       const h = b.count === 0 ? 3 : Math.max(4, (b.count / max) * (baseline - 18));
       const x = padding + i * bw + 1;
       const y = baseline - h;
       const fill = b.count === 0 ? 'rgba(255,255,255,0.07)' : i === peakIdx ? '#ffd166' : 'url(#dpActGrad)';
-      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fill}"/>`;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fill}"><title>${b.label}: ${b.count} commits</title></rect>`;
     })
     .join('');
 
-  // Axis labels: first, peak, last
   const labelOf = (i: number, x: number) =>
     `<text x="${x.toFixed(1)}" y="${(baseline + 16).toFixed(1)}" fill="rgba(255,255,255,0.55)" font-size="10" text-anchor="middle">${buckets[i].label}</text>`;
   const axisLabels = [
@@ -367,11 +427,11 @@ function renderActivity(repos: GhRepo[]) {
   ].join('');
 
   const peakX = padding + peakIdx * bw + bw / 2;
-  const peakY = baseline - Math.max(4, (max / max) * (baseline - 18)) - 6;
+  const peakY = baseline - Math.max(4, (baseline - 18)) - 6;
   const peakAnnotation = max > 0 ? `<text x="${peakX.toFixed(1)}" y="${peakY.toFixed(1)}" fill="#ffd166" font-size="10" font-weight="800" text-anchor="middle">${max}</text>` : '';
 
   $('activityDiag').innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="diag-svg" role="img" aria-label="Repo updates per month over the last 24 months">
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="diag-svg" role="img" aria-label="Commits per month over the last 12 months">
       <defs>
         <linearGradient id="dpActGrad" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stop-color="#31d9ff"/>
@@ -379,15 +439,41 @@ function renderActivity(repos: GhRepo[]) {
         </linearGradient>
       </defs>
       <line x1="${padding}" x2="${W - padding}" y1="${baseline}" y2="${baseline}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-      ${bars}
+      ${cleanBars}
       ${peakAnnotation}
       ${axisLabels}
     </svg>`;
 
-  $('activityCaption').textContent = `peak ${buckets[peakIdx].label}, ${max} updates`;
+  $('activityCaption').textContent =
+    `peak ${buckets[peakIdx].label}, ${max} commits${insights?.commitActivitySource ? ` · source: ${insights.commitActivitySource}` : ''}`;
+  // The activity card title needs to reflect that this is real commit data
+  // not "repos updated", and the timespan changed from 24 months to 12.
+  const titleEl = card?.querySelector('h2');
+  if (titleEl) titleEl.textContent = 'Commits per month, last 12 months';
 }
 
 function renderHealth(repos: GhRepo[]) {
+  // The previous version used `updated_at` for the y-axis (recency). For
+  // prolific maintainers every bubble clamped to the top of the chart. Two
+  // fixes:
+  //  1. Prefer `pushed_at` (last commit) over `updated_at` (any metadata).
+  //  2. If even with pushed_at ≥80% of bubbles still cluster within 30 days,
+  //     swap the y-axis to scoreRepo() (which incorporates engagement).
+  // Also: hide the card entirely when subset < 3 — a near-empty chart shipped
+  // for repo pages and looked broken.
+  const card = document.querySelector<HTMLElement>('#userActivityRow > div:nth-child(2)');
+
+  const subset = [...repos]
+    .filter((r) => !r.fork)
+    .sort((a, b) => scoreRepo(b) - scoreRepo(a))
+    .slice(0, 30);
+
+  if (subset.length < 3) {
+    if (card) card.classList.add('hidden');
+    return;
+  }
+  if (card) card.classList.remove('hidden');
+
   const W = 600;
   const H = 240;
   const padL = 40;
@@ -399,29 +485,32 @@ function renderHealth(repos: GhRepo[]) {
   const dNow = Date.now();
   const dayMs = 86_400_000;
 
-  // Take top 30 by score so the chart stays readable.
-  const subset = [...repos]
-    .filter((r) => !r.fork)
-    .sort((a, b) => scoreRepo(b) - scoreRepo(a))
-    .slice(0, 30);
+  const tsOf = (r: GhRepo) => new Date(r.pushed_at ?? r.updated_at).getTime();
+  const recencyDays = (r: GhRepo) => Math.min(730, (dNow - tsOf(r)) / dayMs);
+  const clusteredAtTop = subset.filter((r) => recencyDays(r) < 30).length / subset.length;
 
-  if (subset.length === 0) {
-    $('healthDiag').innerHTML = `<div class="muted" style="padding:14px">No public repos to plot.</div>`;
-    return;
-  }
+  // When recency clusters too tightly, swap the y-axis to scoreRepo() so the
+  // chart still has spread. We label it "score" and explain in the caption.
+  const useScoreAxis = clusteredAtTop >= 0.8;
+  const scoreMax = useScoreAxis ? Math.max(1, ...subset.map((r) => scoreRepo(r))) : 0;
 
-  const xVal = (r: GhRepo) => Math.log2(r.stargazers_count + 1); // 0 → 17 covers 1 to 100k+
+  const xVal = (r: GhRepo) => Math.log2(r.stargazers_count + 1);
   const xMax = Math.max(4, ...subset.map(xVal));
-  const yVal = (r: GhRepo) => Math.min(730, (dNow - new Date(r.updated_at).getTime()) / dayMs);
+  const yVal = (r: GhRepo) =>
+    useScoreAxis
+      ? 1 - scoreRepo(r) / scoreMax  // 0 = highest score (top), 1 = lowest (bottom)
+      : recencyDays(r) / 730;
 
   const points = subset
     .map((r) => {
       const x = padL + (xVal(r) / xMax) * innerW;
-      const y = padT + (yVal(r) / 730) * innerH;
+      const y = padT + yVal(r) * innerH;
       const radius = Math.max(4, Math.min(18, 4 + Math.log2(r.forks_count + 1) * 2.5));
       const color = langColors[r.language ?? ''] ?? '#7c5cff';
       const safeName = escapeXml(r.name);
-      return `<g class="health-pt"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${color}" fill-opacity="0.4" stroke="${color}" stroke-width="1.5"/><title>${safeName} · ★ ${r.stargazers_count} · ${r.forks_count} forks · ${r.updated_at.slice(0, 10)}</title></g>`;
+      const safeFull = escapeAttr(r.full_name);
+      const lastDate = (r.pushed_at ?? r.updated_at).slice(0, 10);
+      return `<a href="https://github.com/${safeFull}" target="_blank" rel="noreferrer"><g class="health-pt"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${color}" fill-opacity="0.4" stroke="${color}" stroke-width="1.5"/><title>${safeName} · ★ ${r.stargazers_count} · ${r.forks_count} forks · last push ${lastDate}</title></g></a>`;
     })
     .join('');
 
@@ -433,13 +522,26 @@ function renderHealth(repos: GhRepo[]) {
     })
     .join('');
 
-  const yLabels = [0, 90, 365, 730]
-    .map((days) => {
-      const y = padT + (days / 730) * innerH;
-      const lbl = days === 0 ? 'now' : days < 365 ? `${days}d` : `${Math.round(days / 365)}y`;
-      return `<text x="${(padL - 8).toFixed(1)}" y="${(y + 4).toFixed(1)}" fill="rgba(255,255,255,0.55)" font-size="10" text-anchor="end">${lbl}</text>`;
-    })
-    .join('');
+  const yLabels = useScoreAxis
+    ? ['top', 'mid', 'low']
+        .map((lbl, i) => {
+          const y = padT + (i / 2) * innerH;
+          return `<text x="${(padL - 8).toFixed(1)}" y="${(y + 4).toFixed(1)}" fill="rgba(255,255,255,0.55)" font-size="10" text-anchor="end">${lbl}</text>`;
+        })
+        .join('')
+    : [0, 90, 365, 730]
+        .map((days) => {
+          const y = padT + (days / 730) * innerH;
+          const lbl = days === 0 ? 'now' : days < 365 ? `${days}d` : `${Math.round(days / 365)}y`;
+          return `<text x="${(padL - 8).toFixed(1)}" y="${(y + 4).toFixed(1)}" fill="rgba(255,255,255,0.55)" font-size="10" text-anchor="end">${lbl}</text>`;
+        })
+        .join('');
+
+  const cornerLabels = useScoreAxis
+    ? `<text x="${padL + 4}" y="${padT + 14}" fill="rgba(98,240,167,0.7)" font-size="10" font-weight="700">popular &amp; engaged</text>
+       <text x="${(W - padR - 4).toFixed(1)}" y="${padT + innerH - 4}" text-anchor="end" fill="rgba(255,107,107,0.6)" font-size="10" font-weight="700">long tail</text>`
+    : `<text x="${padL + 4}" y="${padT + 14}" fill="rgba(98,240,167,0.7)" font-size="10" font-weight="700">popular &amp; active</text>
+       <text x="${(W - padR - 4).toFixed(1)}" y="${padT + innerH - 4}" text-anchor="end" fill="rgba(255,107,107,0.6)" font-size="10" font-weight="700">popular but stale</text>`;
 
   $('healthDiag').innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="diag-svg" role="img" aria-label="Repo health scatter chart">
@@ -447,12 +549,19 @@ function renderHealth(repos: GhRepo[]) {
       <line x1="${padL}" x2="${W - padR}" y1="${(padT + innerH / 2).toFixed(1)}" y2="${(padT + innerH / 2).toFixed(1)}" stroke="rgba(255,255,255,0.06)"/>
       <line x1="${padL}" x2="${padL}" y1="${padT}" y2="${padT + innerH}" stroke="rgba(255,255,255,0.12)"/>
       <line x1="${padL}" x2="${W - padR}" y1="${padT + innerH}" y2="${padT + innerH}" stroke="rgba(255,255,255,0.12)"/>
-      <text x="${padL + 4}" y="${padT + 14}" fill="rgba(98,240,167,0.7)" font-size="10" font-weight="700">popular &amp; active</text>
-      <text x="${(W - padR - 4).toFixed(1)}" y="${padT + innerH - 4}" text-anchor="end" fill="rgba(255,107,107,0.6)" font-size="10" font-weight="700">popular but stale</text>
+      ${cornerLabels}
       ${points}
       ${xAxisLabels}
       ${yLabels}
     </svg>`;
+
+  // Also update the caption next to the title to reflect the y-axis choice.
+  const captionEl = card?.querySelector<HTMLElement>('.section-title .muted');
+  if (captionEl) {
+    captionEl.textContent = useScoreAxis
+      ? 'stars × overall score — every repo is recently maintained'
+      : 'stars × recency × forks';
+  }
 }
 
 function renderGraph(topLangs: [string, number][], themes: ReturnType<typeof getThemes>, arch: string) {
@@ -592,7 +701,7 @@ const CATEGORY_ACCENT: Record<DetectedTech['category'], string> = {
   other: '#9aa7c7',
 };
 
-function renderStack(insights: Insights | undefined, isRepo: boolean) {
+function renderStack(insights: Insights | undefined, isRepo: boolean, owner?: string) {
   const card = $('stackCard');
   const body = $('stackBody');
   const subtitle = $('stackSubtitle');
@@ -628,7 +737,10 @@ function renderStack(insights: Insights | undefined, isRepo: boolean) {
       .filter((r) => r.stack.detected.length > 0)
       .map((r) => {
         const top = rankDetectedClient(r.stack.detected).slice(0, 6).map((t) => t.name).join(' · ');
-        return `<div class="stack-repo-row"><b>${escapeHtml(r.repo)}</b><span class="muted">${escapeHtml(top)}</span></div>`;
+        const repoLink = owner
+          ? `<a href="https://github.com/${escapeAttr(owner)}/${escapeAttr(r.repo)}" target="_blank" rel="noreferrer"><b>${escapeHtml(r.repo)}</b></a>`
+          : `<b>${escapeHtml(r.repo)}</b>`;
+        return `<div class="stack-repo-row">${repoLink}<span class="muted">${escapeHtml(top)}</span></div>`;
       })
       .join('');
     if (rows) perRepoHtml = `<div class="stack-perrepo">${rows}</div>`;
@@ -766,6 +878,41 @@ function renderHeatmap(insights: Insights | undefined) {
       ${monthLabels.join('')}
     </svg>
     <div class="muted heatmap-summary">${total.toLocaleString()} commits · peak ${peakLabel} (${ca[peakIdx].total})</div>`;
+}
+
+function renderRelated(insights: Insights | undefined, isRepo: boolean) {
+  // "Often building with" (user) or "Top contributors" (repo). Each chip
+  // links to the contributor's GitHub *and* their devprint card so the page
+  // becomes a launchpad to related people, not a dead-end.
+  const card = $('relatedCard');
+  const body = $('relatedBody');
+  const meta = $('relatedMeta');
+  const list = insights?.relatedProfiles ?? [];
+  if (list.length === 0) {
+    card.classList.add('hidden');
+    body.innerHTML = '';
+    meta.textContent = '';
+    return;
+  }
+  card.classList.remove('hidden');
+  $('relatedTitle').textContent = isRepo ? 'Top contributors' : 'Often building with';
+  meta.textContent = `${list.length} ${isRepo ? 'contributors' : 'collaborators across top repos'}`;
+
+  body.innerHTML = list
+    .map((p: RelatedProfile) => {
+      const safe = escapeAttr(p.login);
+      const safeAvatar = escapeAttr(p.avatar_url);
+      const via = p.viaRepo ? `<span class="related-via">via ${escapeHtml(p.viaRepo)}</span>` : '';
+      return `<div class="related-chip">
+        <a class="related-chip-main" href="https://github.com/${safe}" target="_blank" rel="noreferrer" title="${safe} · ${p.contributions} commits">
+          <img src="${safeAvatar}" alt="" loading="lazy" referrerpolicy="no-referrer"/>
+          <span class="related-login">${escapeHtml(p.login)}</span>
+        </a>
+        <a class="related-chip-devprint" href="/${safe}" title="See ${safe}'s devprint">card →</a>
+        ${via}
+      </div>`;
+    })
+    .join('');
 }
 
 function escapeHtml(s: string): string {

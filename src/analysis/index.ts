@@ -1,6 +1,7 @@
 export type {
   GhUser,
   GhRepo,
+  GhContributor,
   RepoFile,
   Confidence,
   Evidence,
@@ -43,6 +44,8 @@ export {
   getThemes,
   scoreRepo,
   statValue,
+  summariseThemes,
+  BATTLE_FORMULAS,
 } from './infer.ts';
 
 export { buildUserPack, buildRepoPack } from './pack.ts';
@@ -63,7 +66,12 @@ export {
 export type { Commit, CommitStyleSignal, CommitStyleVerdict } from './commits.ts';
 
 export { buildUserInsights, buildRepoInsights } from './insights.ts';
-export type { Insights, CommitActivityWeek, BuildInsightsOptions } from './insights.ts';
+export type {
+  Insights,
+  CommitActivityWeek,
+  RelatedProfile,
+  BuildInsightsOptions,
+} from './insights.ts';
 
 export { isOptedOut, STATIC_OPTOUT } from './optout.ts';
 export type { OptOutTarget } from './optout.ts';
