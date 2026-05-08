@@ -71,6 +71,7 @@ export type {
   CommitActivityWeek,
   RelatedProfile,
   BuildInsightsOptions,
+  ProfileExtra,
 } from './insights.ts';
 
 export { isOptedOut, STATIC_OPTOUT } from './optout.ts';

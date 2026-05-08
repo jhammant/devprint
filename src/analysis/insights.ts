@@ -23,6 +23,40 @@ export type RelatedProfile = {
   viaRepo?: string;
 };
 
+/**
+ * User-controlled overrides loaded from `<owner>/.github/devprint.json` (or
+ * fallback `<owner>/<owner>/devprint.json` — the profile-readme repo). Every
+ * field is optional and stylistically merged into the rendered card. The
+ * styles are designed to look fine when this is `undefined` (the common
+ * case); fields only render when the user has filled them in.
+ */
+export type ProfileExtra = {
+  /** Single-line tagline shown under the name. */
+  tagline?: string;
+  /** Status ribbon copy ("Open to advisor chats", "Available · Q3 2026"). */
+  status?: string;
+  /** Replaces the GitHub-bio paragraph in styles that show prose. */
+  about?: string;
+  /** Repo names (no owner) to feature first in "Selected works" lists. */
+  pinned?: string[];
+  /** Outbound links for the contact rail / footer. */
+  links?: Array<{ name: string; href: string }>;
+  /** Bullet wins surfaced as a "Highlights" section. */
+  highlights?: string[];
+  /** Skill chips beyond the language inference. */
+  skills?: string[];
+  /** "Right now" line — what they're up to today. */
+  now?: string;
+  /** What they're available for ("Advisory", "Speaking", "Short consulting"). */
+  available?: string;
+  /** Soft ask — what kind of intro / message they'd want from a reader. */
+  ask?: string;
+  /** Optional contact email (only render with explicit user permission). */
+  contact?: string;
+  /** Where this object was found (./.github/devprint.json etc.) — debug only. */
+  source?: string;
+};
+
 export type Insights = {
   target: string;
   kind: 'user' | 'repo';
@@ -51,6 +85,13 @@ export type Insights = {
    */
   reposAnalysed?: number;
   publicReposTotal?: number;
+  /**
+   * Optional user-supplied overrides from `<owner>/.github/devprint.json`.
+   * When present, styles can use it to flavour the card (status ribbon,
+   * tagline, available-for line, pinned repos, links). When absent the
+   * styles render fine on GitHub data alone.
+   */
+  profileExtra?: ProfileExtra;
 };
 
 export type BuildInsightsOptions = {
@@ -105,6 +146,7 @@ export async function buildUserInsights(
 
   const reposAnalysed = repos.length;
   const publicReposTotal = profile?.public_repos;
+  const profileExtra = await fetchProfileExtra(client, user);
 
   return {
     target: user,
@@ -116,6 +158,7 @@ export async function buildUserInsights(
     ...(relatedProfiles.length ? { relatedProfiles } : {}),
     reposAnalysed,
     ...(publicReposTotal !== undefined ? { publicReposTotal } : {}),
+    ...(profileExtra ? { profileExtra } : {}),
   };
 }
 
@@ -135,6 +178,9 @@ export async function buildRepoInsights(
   const relatedProfiles: RelatedProfile[] = contributors
     .slice(0, RELATED_PROFILE_LIMIT)
     .map((c) => ({ login: c.login, avatar_url: c.avatar_url, contributions: c.contributions }));
+  // Repo pages also get the owner's overrides — useful for "links / contact"
+  // even when the visitor lands on a single-repo page.
+  const profileExtra = await fetchProfileExtra(client, owner);
   return {
     target: `${owner}/${repoName}`,
     kind: 'repo',
@@ -143,7 +189,87 @@ export async function buildRepoInsights(
     commitStyle,
     ...(ca && ca.length ? { commitActivity: ca, commitActivitySource: `${owner}/${repoName}` } : {}),
     ...(relatedProfiles.length ? { relatedProfiles } : {}),
+    ...(profileExtra ? { profileExtra } : {}),
   };
+}
+
+/**
+ * Try to fetch a user-supplied `devprint.json` from one of the well-known
+ * locations:
+ *   1. `<owner>/.github/devprint.json`   — community-standard "GitHub config" repo
+ *   2. `<owner>/<owner>/devprint.json`   — profile-readme repo
+ *   3. `<owner>/.github/devprint.yml`    — same repo, YAML variant (best-effort)
+ *
+ * Returns the parsed object on success, undefined otherwise. We're permissive
+ * about field names (the user's hand-writing this) and reject anything
+ * that doesn't look like an object so a stray markdown file doesn't blow up.
+ */
+async function fetchProfileExtra(
+  client: GhClient,
+  owner: string,
+): Promise<ProfileExtra | undefined> {
+  const sources: Array<[string, string, string]> = [
+    [owner, '.github', 'devprint.json'],
+    [owner, owner, 'devprint.json'],
+  ];
+  for (const [o, r, p] of sources) {
+    const file = await client.getRepoFile(o, r, p).catch(() => undefined);
+    if (!file?.content) continue;
+    const parsed = parseProfileExtra(file.content);
+    if (parsed) {
+      parsed.source = `${o}/${r}/${p}`;
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Permissive ProfileExtra parser. Only keeps fields we know about, coerces
+ * strings, and rejects anything that doesn't fit the contract — so a
+ * malformed file just yields `undefined` rather than rendering garbage.
+ */
+function parseProfileExtra(raw: string): ProfileExtra | undefined {
+  let obj: unknown;
+  try { obj = JSON.parse(raw); } catch { return undefined; }
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return undefined;
+  const r = obj as Record<string, unknown>;
+  const out: ProfileExtra = {};
+  const cleanStr = (raw: string, max: number): string => scrub(raw.slice(0, max)).text;
+  const str = (k: string, max = 500): string | undefined => typeof r[k] === 'string' ? cleanStr(r[k] as string, max) : undefined;
+  const list = (k: string, max = 200): string[] | undefined => Array.isArray(r[k])
+    ? (r[k] as unknown[]).filter((v): v is string => typeof v === 'string').map((v) => cleanStr(v, max)).slice(0, 12)
+    : undefined;
+
+  const tagline = str('tagline'); if (tagline) out.tagline = tagline;
+  const status = str('status'); if (status) out.status = status;
+  const about = str('about', 2000); if (about) out.about = about;
+  const pinned = list('pinned', 80); if (pinned?.length) out.pinned = pinned;
+  const highlights = list('highlights'); if (highlights?.length) out.highlights = highlights;
+  const skills = list('skills', 80); if (skills?.length) out.skills = skills;
+  const now = str('now'); if (now) out.now = now;
+  const available = str('available'); if (available) out.available = available;
+  const ask = str('ask', 600); if (ask) out.ask = ask;
+  const contact = str('contact'); if (contact) out.contact = contact;
+
+  // Links: array of {name, href} where href must be http(s) — anything else
+  // is dropped (no javascript: or relative URLs sneaking through).
+  if (Array.isArray(r.links)) {
+    const safe: Array<{ name: string; href: string }> = [];
+    for (const item of r.links as unknown[]) {
+      if (!item || typeof item !== 'object') continue;
+      const i = item as Record<string, unknown>;
+      const name = typeof i.name === 'string' ? cleanStr(i.name, 60) : undefined;
+      const href = typeof i.href === 'string' ? i.href.slice(0, 500) : undefined;
+      if (!name || !href) continue;
+      if (!/^https?:\/\//i.test(href)) continue;
+      safe.push({ name, href });
+      if (safe.length >= 8) break;
+    }
+    if (safe.length) out.links = safe;
+  }
+
+  return Object.keys(out).length ? out : undefined;
 }
 
 // ---- helpers --------------------------------------------------------------

@@ -156,9 +156,13 @@ async function build(raw: string, scroll = true) {
 
     // Style takeover: when ?style=<id> is set, fetch the pack + insights, then
     // hand off to the chosen renderer instead of running the default flow.
-    const styleId = new URLSearchParams(location.search).get('style');
-    const renderer = getStyle(styleId);
-    const styleQuery = renderer ? `?style=${renderer.id}` : '';
+    // The "letterhead" view is the new default — visiting `/<user>` lands
+    // there. Pass `?style=default` (or `?style=dashboard`) to opt back into
+    // the original full-dashboard layout.
+    const rawStyleId = new URLSearchParams(location.search).get('style');
+    const styleId = rawStyleId ?? 'letterhead';
+    const renderer = currentMode === 'agent' ? null : getStyle(styleId);
+    const styleQuery = rawStyleId ? `?style=${rawStyleId}` : '';
     history.replaceState(null, '', `${currentMode === 'agent' ? `/agents/${target}` : `/${target}`}${styleQuery}`);
 
     setLoaderStatus(`Pulling agent pack + insights from Lambda…`, 70);
@@ -171,7 +175,10 @@ async function build(raw: string, scroll = true) {
 
     const data: ProfileData = {
       profile, repo, isRepo, repos, topLangs, langs, themes, archetype: arch,
-      totalStars, battle, ...(insights ? { insights } : {}), pack: lastPack, target,
+      totalStars, battle,
+      ...(insights ? { insights } : {}),
+      ...(insights?.profileExtra ? { profileExtra: insights.profileExtra } : {}),
+      pack: lastPack, target,
     };
     lastProfileData = data;
     lastTarget = target;
@@ -229,12 +236,15 @@ async function build(raw: string, scroll = true) {
     // user sees once they have a result. CSS handles the actual collapse.
     document.body.classList.add('has-result');
     // Mount the floating style picker so visitors can flip into one of the
-    // alternate views with a click.
+    // alternate views with a click. The picker markup includes a sibling
+    // <style> block, so move ALL children (not just the first one).
     const existingPicker = document.getElementById('dpStylePicker');
     if (existingPicker) existingPicker.remove();
-    const pickerDiv = document.createElement('div');
-    pickerDiv.innerHTML = renderStylePicker('default', target, currentMode);
-    document.body.appendChild(pickerDiv.firstElementChild!);
+    document.querySelector('#dpStylePickerStyle')?.remove();
+    const pickerHost = document.createElement('div');
+    pickerHost.id = 'dpStylePickerHost';
+    pickerHost.innerHTML = renderStylePicker('default', target, currentMode);
+    while (pickerHost.firstChild) document.body.appendChild(pickerHost.firstChild);
     wireStylePicker(document, target, currentMode);
     if (scroll) $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
@@ -806,20 +816,74 @@ function escapeXml(s: string): string {
 // ---- style picker (floats top-right, swaps view via ?style=) ---------------
 
 function renderStylePicker(currentId: string, _target: string, _mode: Mode): string {
-  const opts = STYLE_LIST.map((s) => `<option value="${s.id}"${s.id === currentId ? ' selected' : ''}>${s.name}</option>`).join('');
-  return `<div id="dpStylePicker" style="position:fixed;top:14px;right:14px;z-index:10000;display:flex;gap:8px;align-items:center;background:rgba(15,15,15,.88);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);padding:7px 12px;border-radius:999px;font-family:Inter,ui-sans-serif,system-ui;font-size:12px;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.45)">
-    <label for="dpStyleSel" style="color:#888;letter-spacing:.04em">style</label>
-    <select id="dpStyleSel" aria-label="Pick a Devprint card style" style="background:transparent;color:#fff;border:0;outline:0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding-right:4px">${opts}</select>
-    <a href="/prototypes/" title="See the full gallery" style="color:#62f0a7;text-decoration:none;font-size:11px;letter-spacing:.04em;border-left:1px solid rgba(255,255,255,.15);padding-left:10px">gallery →</a>
-  </div>`;
+  // Visible chip row at the top — every style is one click away. Doubles
+  // as the keyboard cheat-sheet (← → to step, 0–9 to jump direct).
+  // Renders the dashboard chip first, then each visual style.
+  const chips = STYLE_LIST.map((s, i) => {
+    const active = s.id === currentId || (currentId === 'default' && s.id === 'default');
+    const label = s.id === 'default' ? 'Dashboard' : s.name;
+    const num = i === 0 ? '0' : String(i);
+    return `<button class="dp-chip${active ? ' is-active' : ''}" data-style="${s.id}" type="button" title="${escapeXml(s.blurb)} (press ${num})"><span class="dp-num">${num}</span>${escapeXml(label)}</button>`;
+  }).join('');
+  return `<style>
+.dp-rail{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;gap:6px;align-items:center;background:rgba(8,10,16,.88);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.14);padding:6px 8px;border-radius:999px;font-family:Inter,ui-sans-serif,system-ui;font-size:11px;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.5);max-width:calc(100vw - 32px);overflow-x:auto;scrollbar-width:none}
+.dp-rail::-webkit-scrollbar{display:none}
+.dp-chip{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.02em;color:rgba(255,255,255,.72);background:transparent;border:0;padding:7px 12px 7px 8px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;line-height:1;transition:background .15s,color .15s}
+.dp-chip .dp-num{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.06);padding:2px 5px;border-radius:99px;letter-spacing:.02em;font-weight:600}
+.dp-chip:hover{background:rgba(255,255,255,.06);color:#fff}
+.dp-chip:focus-visible{outline:2px solid #62f0a7;outline-offset:1px}
+.dp-chip.is-active{background:linear-gradient(135deg,#31d9ff,#7c5cff);color:#fff;box-shadow:0 4px 14px rgba(124,92,255,.5)}
+.dp-chip.is-active .dp-num{background:rgba(0,0,0,.25);color:#fff}
+.dp-rail .dp-sep{width:1px;align-self:stretch;background:rgba(255,255,255,.12);margin:0 2px;flex-shrink:0}
+.dp-rail .dp-gallery{font-family:inherit;font-size:11px;color:#62f0a7;text-decoration:none;padding:7px 12px;letter-spacing:.04em;flex-shrink:0;font-weight:600}
+.dp-rail .dp-gallery:hover{color:#9aff9a}
+@media(max-width:540px){.dp-rail{left:8px;right:8px;transform:none;max-width:none}.dp-chip{padding:7px 10px 7px 6px}}
+@media print{.dp-rail{display:none}}
+</style>
+<div class="dp-rail" id="dpStylePicker" role="tablist" aria-label="Card style">${chips}<span class="dp-sep"></span><a class="dp-gallery" href="/prototypes/" title="See the full gallery">gallery →</a></div>`;
 }
 
 function wireStylePicker(root: ParentNode, target: string, mode: Mode): void {
-  const sel = root.querySelector<HTMLSelectElement>('#dpStyleSel');
-  if (!sel) return;
-  sel.addEventListener('change', () => {
-    applyStyle(sel.value, target, mode);
+  const rail = root.querySelector<HTMLElement>('#dpStylePicker') ?? document.getElementById('dpStylePicker');
+  if (!rail) return;
+  // Click a chip → switch.
+  rail.querySelectorAll<HTMLButtonElement>('.dp-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const v = chip.dataset.style;
+      if (v) applyStyle(v, target, mode);
+    });
   });
+  // Keyboard: ← → step through; 0-9 jump direct. Bound on document so it
+  // works even when focus is somewhere else (no input currently focused).
+  if (!document.body.dataset.dpKeyboardWired) {
+    document.body.dataset.dpKeyboardWired = '1';
+    document.addEventListener('keydown', (e) => {
+      // Don't hijack typing in the search box / any text field.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!lastTarget) return;
+      const total = STYLE_LIST.length;
+      const currentIdx = STYLE_LIST.findIndex((s) => {
+        const url = new URLSearchParams(location.search).get('style');
+        const cur = url ?? 'letterhead';
+        return s.id === cur;
+      });
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        applyStyle(STYLE_LIST[(currentIdx + 1) % total]?.id ?? 'default', lastTarget, currentMode);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        applyStyle(STYLE_LIST[(currentIdx - 1 + total) % total]?.id ?? 'default', lastTarget, currentMode);
+      } else if (/^[0-9]$/.test(e.key)) {
+        const n = parseInt(e.key, 10);
+        if (n < total) {
+          e.preventDefault();
+          applyStyle(STYLE_LIST[n].id, lastTarget, currentMode);
+        }
+      }
+    });
+  }
 }
 
 /**

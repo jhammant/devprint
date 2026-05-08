@@ -8,6 +8,7 @@ import type {
   GhRepo,
   GhUser,
   Insights,
+  ProfileExtra,
   Themes,
 } from '../../analysis/index.ts';
 
@@ -25,6 +26,12 @@ export type ProfileData = {
   battle: BattleStats;
   /** Pulled from the JSON sidecar; may be undefined if the endpoint failed. */
   insights?: Insights;
+  /**
+   * User-supplied overrides from `<owner>/.github/devprint.json`. Convenience
+   * pointer; equivalent to `data.insights?.profileExtra` but easier to use in
+   * renderers without having to optional-chain through insights every time.
+   */
+  profileExtra?: ProfileExtra;
   /** Markdown agent pack. */
   pack: string;
   target: string;

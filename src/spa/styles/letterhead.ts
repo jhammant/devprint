@@ -22,15 +22,22 @@ export const letterhead: StyleRenderer = {
   blurb: 'Printed CV · share-as-document',
   takeover: true,
   render(data) {
-    const { profile, isRepo, repo, totalStars, battle, archetype, target, langs, repos, themes } = data;
-    const tops = topRepos(repos, 6);
+    const { profile, isRepo, repo, totalStars, battle, archetype, target, langs, repos, themes, profileExtra: x } = data;
+    // User-controlled override: pin specific repo names ahead of the
+    // score-based ranking, then fill the rest by score.
+    const pinned = (x?.pinned ?? []).map((n) => repos.find((r) => r.name === n)).filter(Boolean) as typeof repos;
+    const rest = topRepos(repos.filter((r) => !pinned.some((p) => p.name === r.name)), Math.max(0, 6 - pinned.length));
+    const tops = [...pinned, ...rest].slice(0, 6);
     const yrs = yearsActive(repos);
     const langList = Object.entries(langs).sort((a, b) => b[1] - a[1]).slice(0, 6);
     const topLangCount = langList[0]?.[1] ?? 1;
     const isOrgOrUser = !isRepo;
+    // Tagline: prefer user-supplied; fall back to inferred copy.
     const titleLine = isRepo
       ? `${escapeHtml(repo!.full_name)} — ${escapeHtml(repo!.description || 'a repository fingerprint')}`
-      : `A ${escapeHtml(archetype)}${yrs ? ` — ${yrs} years of public commits` : ''}`;
+      : x?.tagline
+        ? escapeHtml(x.tagline)
+        : `A ${escapeHtml(archetype)}${yrs ? ` — ${yrs} years of public commits` : ''}`;
 
     return {
       html: `
@@ -118,8 +125,16 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
       <div class="lh-title-line">${titleLine}</div>
     </div>
     <div class="lh-meta">
-      <span class="ribbon">${isRepo ? 'Repository' : 'Open to work'}</span><br>
+      ${isRepo
+        ? '<span class="ribbon">Repository</span><br>'
+        : x?.status
+          ? `<span class="ribbon">${escapeHtml(x.status)}</span><br>`
+          : x?.available
+            ? `<span class="ribbon">${escapeHtml(x.available)}</span><br>`
+            : ''}
       github.com/<a href="https://github.com/${escapeAttr(target)}" target="_blank" rel="noreferrer">${escapeHtml(target)}</a><br>
+      ${x?.contact ? `<a href="mailto:${escapeAttr(x.contact)}">${escapeHtml(x.contact)}</a><br>` : ''}
+      ${x?.links?.length ? x.links.slice(0, 4).map((l) => `<a href="${escapeAttr(l.href)}" target="_blank" rel="noreferrer">${escapeHtml(l.name)}</a>`).join(' · ') + '<br>' : ''}
       <em style="color:#c0392b">live · synced ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</em>
     </div>
   </header>
@@ -127,9 +142,22 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
   <h2>About</h2>
   <p class="lh-about">${
     isOrgOrUser
-      ? `${escapeHtml(profile.name || profile.login)} is a <strong>${escapeHtml(archetype.toLowerCase())}</strong> whose public output spans ${repos.length} non-fork repositories totalling <strong>${totalStars.toLocaleString()} stars</strong>${langList.length > 1 ? `, mostly ${langList.slice(0, 3).map(([l]) => escapeHtml(l)).join(', ')}` : ''}${themes.length ? ` with a focus on ${themes.slice(0, 2).map(([t]) => escapeHtml(t.toLowerCase())).join(' and ')}` : ''}. ${profile.followers.toLocaleString()} followers across the platform.`
+      ? x?.about
+        ? escapeHtml(x.about)
+        : `${escapeHtml(profile.name || profile.login)} is a <strong>${escapeHtml(archetype.toLowerCase())}</strong> whose public output spans ${repos.length} non-fork repositories totalling <strong>${totalStars.toLocaleString()} stars</strong>${langList.length > 1 ? `, mostly ${langList.slice(0, 3).map(([l]) => escapeHtml(l)).join(', ')}` : ''}${themes.length ? ` with a focus on ${themes.slice(0, 2).map(([t]) => escapeHtml(t.toLowerCase())).join(' and ')}` : ''}. ${profile.followers.toLocaleString()} followers across the platform.`
       : `${escapeHtml(repo!.full_name)} is a <strong>${escapeHtml(repo!.language ?? 'mixed')}</strong> project with ${repo!.stargazers_count.toLocaleString()} stars and ${repo!.forks_count.toLocaleString()} forks. Last push <strong>${relativeDate(repo!.pushed_at ?? repo!.updated_at)}</strong>. ${repo!.description ? escapeHtml(repo!.description) : ''}`
   }</p>
+  ${x?.now ? `<p class="lh-about" style="margin-top:14px;font-style:italic;color:#444"><strong style="color:#c0392b;font-style:normal">Right now —</strong> ${escapeHtml(x.now)}</p>` : ''}
+
+  ${x?.highlights?.length ? `<h2>Highlights</h2>
+  <ul style="font-family:Fraunces,Georgia,serif;font-size:16px;line-height:1.6;list-style:none;padding:0;margin:0">
+    ${x.highlights.slice(0, 6).map((h) => `<li style="display:grid;grid-template-columns:24px 1fr;gap:10px;padding:8px 0;border-bottom:1px dotted #c9bfa3;align-items:baseline"><span style="color:#c0392b;font-weight:900">§</span><span>${escapeHtml(h)}</span></li>`).join('')}
+  </ul>` : ''}
+
+  ${x?.skills?.length ? `<h2>Skills, in their words</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px">
+    ${x.skills.slice(0, 16).map((s) => `<span style="background:#fff;border:1px solid #c9bfa3;padding:5px 10px;color:#111;letter-spacing:.04em">${escapeHtml(s)}</span>`).join('')}
+  </div>` : ''}
 
   <div class="lh-stats">
     <div class="lh-stat"><span class="num">${(isRepo ? (repo!.open_issues_count || 0) : profile.public_repos).toLocaleString()}</span><span class="lbl">${isRepo ? 'open issues' : 'public repos'}</span></div>
@@ -166,8 +194,10 @@ body.style-letterhead{background:#1a1817;color:#111;font-family:Inter,ui-sans-se
 
   <div class="lh-cta">
     <div>
-      <h3>This page is a living CV.</h3>
-      <p>Send the link to a hiring manager. It updates automatically from public GitHub data — no resume to maintain, no LinkedIn polish, no buzzword bingo.</p>
+      <h3>${x?.ask ? escapeHtml(x.ask.split(/[.!?]\s+/)[0] ?? x.ask) : 'This page is a living CV.'}</h3>
+      <p>${x?.ask
+        ? escapeHtml(x.ask)
+        : 'Send the link to a hiring manager. It updates automatically from public GitHub data — no resume to maintain, no LinkedIn polish, no buzzword bingo.'}</p>
     </div>
     <div class="lh-buttons">
       <a class="lh-btn" href="${escapeAttr(linkedinShareUrl())}" target="_blank" rel="noreferrer">Share on LinkedIn</a>
