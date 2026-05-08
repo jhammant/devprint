@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>v10 — Long Receipt · Devprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,sans-serif;background:#0a0907;color:#fff;min-height:100vh;padding:32px 18px;display:flex;flex-direction:column;align-items:center}
+    body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at top,rgba(255,160,80,.08),transparent 50%);z-index:-1}
+    .nav{display:flex;justify-content:space-between;width:100%;max-width:600px;margin-bottom:28px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#888}
+    .nav a{color:#ff9040;text-decoration:none}
+    /* THE RECEIPT */
+    .receipt{width:100%;max-width:380px;background:#f8f5ec;color:#1a1a1a;padding:0;font-family:'Special Elite',monospace;line-height:1.45;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.7),0 0 0 1px rgba(0,0,0,.15);background-image:
+      repeating-linear-gradient(0deg,transparent 0px,transparent 26px,rgba(0,0,0,.025) 26px,rgba(0,0,0,.025) 27px),
+      radial-gradient(circle at 50% 0,rgba(0,0,0,.06),transparent 30%),
+      radial-gradient(circle at 30% 80%,rgba(140,90,30,.06),transparent 50%);
+      filter:contrast(.95)}
+    /* Top tear */
+    .receipt::before{content:"";position:absolute;top:-1px;left:0;right:0;height:14px;background:radial-gradient(circle at 7px 0,#0a0907 0,#0a0907 6px,transparent 7px);background-size:14px 14px;background-repeat:repeat-x}
+    /* Bottom tear */
+    .receipt::after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:14px;background:radial-gradient(circle at 7px 14px,#0a0907 0,#0a0907 6px,transparent 7px);background-size:14px 14px;background-repeat:repeat-x}
+    .r-content{padding:32px 22px 32px}
+    .r-head{text-align:center;border-bottom:2px dashed rgba(0,0,0,.35);padding-bottom:14px;margin-bottom:14px}
+    .brand{font-weight:400;font-size:20px;letter-spacing:.16em;margin-bottom:4px}
+    .addr{font-size:11px;letter-spacing:.04em;color:#444;line-height:1.4}
+    .addr em{font-style:normal;color:#a04020}
+    .order-meta{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.04em;margin-bottom:6px;color:#444}
+    .order-meta b{color:#1a1a1a;font-weight:400}
+    .row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;letter-spacing:.02em}
+    .row.indent{padding-left:14px;color:#666;font-size:12px}
+    .row.bigger{font-size:14px;font-weight:700}
+    .sec-h{text-align:center;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#666;border-top:1px dashed rgba(0,0,0,.3);border-bottom:1px dashed rgba(0,0,0,.3);padding:6px 0;margin:14px 0 8px}
+    .total-row{border-top:2px dashed rgba(0,0,0,.4);border-bottom:2px dashed rgba(0,0,0,.4);padding:10px 0;margin-top:10px}
+    .total-row .row{font-size:16px;font-weight:700}
+    .total-row .row.huge{font-size:24px;letter-spacing:-.01em;padding:8px 0;border-top:1px solid rgba(0,0,0,.2);margin-top:6px}
+    .stamp-row{text-align:center;margin-top:14px;padding:12px 0;border-top:1px dashed rgba(0,0,0,.3)}
+    .stamp{display:inline-block;border:3px solid #a04020;color:#a04020;padding:6px 14px;font-weight:400;font-size:14px;letter-spacing:.18em;transform:rotate(-3deg);text-transform:uppercase}
+    .stamp small{display:block;font-size:9px;letter-spacing:.18em;margin-top:2px;color:#a04020;opacity:.85}
+    .barcode{display:flex;align-items:flex-end;height:38px;gap:1px;justify-content:center;margin-top:14px;padding:6px 0}
+    .barcode i{display:block;background:#1a1a1a;width:2px;height:100%}
+    .barcode i:nth-child(2n){width:1px;height:80%}
+    .barcode i:nth-child(3n){height:60%}
+    .barcode i:nth-child(7n){width:3px}
+    .qr-line{text-align:center;font-size:10px;letter-spacing:.16em;color:#666;margin-top:6px}
+    .footnote{text-align:center;font-size:10px;letter-spacing:.04em;color:#666;line-height:1.6;margin-top:14px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.25)}
+    .footnote em{font-style:italic;color:#a04020}
+    /* Description */
+    .desc{margin-top:32px;text-align:center;color:#aaa;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;max-width:520px}
+    .desc strong{color:#ff9040;font-weight:700}
+    .cta{margin-top:20px;display:flex;gap:10px;justify-content:center}
+    .cta a{padding:14px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:#ff9040;color:#0a0907;text-decoration:none}
+    .cta a.outline{background:transparent;color:#ff9040;outline:1px solid #ff9040}
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <span>v10 · RECEIPT · 10/10</span>
+    <a href="/prototypes/">← back to gallery</a>
+  </div>
+
+  <article class="receipt">
+    <div class="r-content">
+      <div class="r-head">
+        <div class="brand">★ DEVPRINT ★</div>
+        <div class="addr">PUBLIC GITHUB BUREAU<br>RECEIPT FOR <em>@sindresorhus</em><br>—————— PAID IN COMMITS ——————</div>
+      </div>
+
+      <div class="order-meta">
+        <span>RCPT #: <b>1134-SS-026</b></span>
+        <span>FRI 08/05/26 09:42</span>
+      </div>
+      <div class="order-meta">
+        <span>CASHIER: <b>devprint.dev</b></span>
+        <span>TABLE: stockholm</span>
+      </div>
+
+      <div class="sec-h">— ITEMS PURCHASED —</div>
+
+      <div class="row"><span>1× JavaScript repos</span><span>56</span></div>
+      <div class="row"><span>1× TypeScript repos</span><span>13</span></div>
+      <div class="row"><span>1× Swift repos</span><span>11</span></div>
+      <div class="row"><span>1× Shell · CSS · C</span><span>3</span></div>
+      <div class="row indent">└ supplementary stacks</div>
+
+      <div class="row bigger" style="margin-top:6px"><span>SUBTOTAL · repos shipped</span><span>1,134</span></div>
+
+      <div class="sec-h">— TOP-SELLING ITEMS —</div>
+
+      <div class="row"><span>awesome</span><span>★ 463,911</span></div>
+      <div class="row indent">since 2014 · still on tap</div>
+      <div class="row"><span>awesome-nodejs</span><span>★ 65,626</span></div>
+      <div class="row"><span>awesome-electron</span><span>★ 27,138</span></div>
+      <div class="row"><span>quick-look-plugins</span><span>★ 18,632</span></div>
+      <div class="row"><span>type-fest</span><span>★ 17,123</span></div>
+      <div class="row"><span>ky</span><span>★ 16,829</span></div>
+
+      <div class="sec-h">— BATTLE STATS —</div>
+
+      <div class="row"><span>BUILD POWER</span><span>99 / 99</span></div>
+      <div class="row"><span>IMPACT</span><span>99 / 99</span></div>
+      <div class="row"><span>VERSATILITY</span><span>60 / 99</span></div>
+      <div class="row"><span>MOMENTUM</span><span>51 / 99</span></div>
+      <div class="row"><span>COMMUNITY</span><span>99 / 99</span></div>
+      <div class="row"><span>ORIGINALITY</span><span>80 / 99</span></div>
+
+      <div class="sec-h">— OFTEN BUILDING WITH —</div>
+
+      <div class="row"><span>@lpinca</span><span>34 commits</span></div>
+      <div class="row"><span>@davisonio</span><span>27</span></div>
+      <div class="row"><span>@RichardLitt</span><span>14</span></div>
+      <div class="row"><span>@kevva</span><span>8</span></div>
+      <div class="row"><span>+ 4 more</span><span>...</span></div>
+
+      <div class="total-row">
+        <div class="row bigger"><span>SUBTOTAL · stars earned</span><span>842,530</span></div>
+        <div class="row bigger"><span>SUBTOTAL · followers</span><span>79,088</span></div>
+        <div class="row bigger"><span>SUBTOTAL · years active</span><span>23</span></div>
+        <div class="row huge"><span>★ TIER</span><span>LEGENDARY</span></div>
+      </div>
+
+      <div class="stamp-row">
+        <div class="stamp">★ PAID ★<small>· in full ·</small></div>
+      </div>
+
+      <div class="barcode">
+        <i></i><i></i><i style="height:100%"></i><i></i><i style="height:60%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:80%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:100%"></i><i></i><i style="height:60%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:80%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:60%"></i><i></i><i style="height:100%"></i><i></i><i style="height:80%"></i><i></i><i style="height:100%"></i><i></i>
+      </div>
+      <div class="qr-line">scan: devprint.dev/sindresorhus</div>
+
+      <div class="footnote">
+        Thank you for shipping with us, <em>@sindresorhus</em>.<br>
+        Public data only · no login · regenerated on every push.<br>
+        ★ keep this receipt for your records ★<br>
+        ✶ ✶ ✶ — ✶ — ✶ ✶ ✶
+      </div>
+    </div>
+  </article>
+
+  <p class="desc">Devprint as a <strong>thermal-paper receipt</strong>. Long, narrow, monospaced, perforated top and bottom. Items, subtotals, stamps, barcode. Fits perfectly in a tweet image. <strong>"My GitHub receipt"</strong> writes itself as a viral caption.</p>
+
+  <div class="cta">
+    <a href="#">↗ Snap receipt</a>
+    <a class="outline" href="#">Print real one</a>
+  </div>
+</body>
+</html>

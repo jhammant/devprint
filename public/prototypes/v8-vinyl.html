@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>v8 — Vinyl LP · Devprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700;900&family=Special+Elite&family=JetBrains+Mono:wght@400;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,ui-sans-serif,system-ui;background:#0a0807;color:#f0e8d8;min-height:100vh;padding:32px 18px;display:flex;flex-direction:column;align-items:center}
+    body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at top,rgba(160,80,40,.18),transparent 50%);z-index:-1}
+    .nav{display:flex;justify-content:space-between;width:100%;max-width:980px;margin-bottom:28px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#888}
+    .nav a{color:#ff8a40;text-decoration:none}
+    /* GATEFOLD */
+    .gatefold{display:flex;width:100%;max-width:980px;background:#1a1410;box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 0 1px rgba(0,0,0,.3);position:relative;border-radius:2px;overflow:hidden;perspective:2000px}
+    .gatefold::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(0,0,0,.5);box-shadow:-1px 0 4px rgba(0,0,0,.4),1px 0 4px rgba(0,0,0,.4);z-index:6}
+    /* Sleeve A — front, with album art */
+    .sleeve-a{flex:1;background:#0d0805;background-image:
+      radial-gradient(circle at 30% 20%,rgba(255,140,40,.15),transparent 50%),
+      radial-gradient(circle at 80% 70%,rgba(80,30,160,.2),transparent 60%);
+      padding:28px;color:#f0e8d8;position:relative;min-height:520px;display:flex;flex-direction:column;justify-content:space-between}
+    .sleeve-a::after{content:"";position:absolute;inset:0;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='1' fill='%23000' opacity='.05'/></svg>") repeat;background-size:8px 8px;pointer-events:none}
+    .label-strip{display:flex;justify-content:space-between;align-items:flex-start;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(240,232,216,.55);margin-bottom:18px}
+    .label-strip strong{color:#ff8a40}
+    .album-art{aspect-ratio:1;background:#000;position:relative;border-radius:2px;overflow:hidden;box-shadow:0 0 0 6px rgba(0,0,0,.4),0 0 0 7px rgba(255,140,40,.2),0 20px 50px rgba(0,0,0,.6);margin-bottom:20px}
+    .album-art img{width:100%;height:100%;object-fit:cover;filter:contrast(1.1) saturate(.85) sepia(.15);mix-blend-mode:luminosity}
+    .album-art::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,140,40,.4),transparent 40%,rgba(80,30,160,.3));mix-blend-mode:multiply;z-index:2}
+    .album-art::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(255,255,255,.04) 3px,rgba(255,255,255,.04) 4px);z-index:3}
+    .album-text{position:absolute;left:0;right:0;bottom:0;padding:18px 22px;z-index:4;background:linear-gradient(transparent,rgba(0,0,0,.85))}
+    .album-artist{font-family:'Bebas Neue',Inter,sans-serif;font-size:42px;letter-spacing:.04em;line-height:.95;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.7)}
+    .album-title{font-family:Inter,sans-serif;font-style:italic;font-size:16px;color:#ffb060;margin-top:4px;letter-spacing:.02em}
+    .album-edition{position:absolute;top:14px;right:14px;font-family:'Special Elite',monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.6);padding:6px 10px;border-radius:0;letter-spacing:.1em;text-transform:uppercase;z-index:4;border:1px solid rgba(255,140,40,.3)}
+    .tracklisting-a{padding:0 4px}
+    .tracklisting-a h3{font-family:'Bebas Neue',Inter,sans-serif;font-size:18px;letter-spacing:.16em;color:#ff8a40;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}
+    .tracklisting-a h3 small{color:rgba(240,232,216,.5);font-size:10px;letter-spacing:.2em;font-family:'JetBrains Mono',monospace;font-weight:400}
+    .track{display:grid;grid-template-columns:24px 1fr auto;gap:10px;padding:5px 0;font-size:13px;font-family:'JetBrains Mono',monospace;border-bottom:1px dotted rgba(240,232,216,.15)}
+    .track:last-child{border-bottom:0}
+    .track .n{color:rgba(240,232,216,.45);font-feature-settings:"tnum"}
+    .track .t{color:#f0e8d8}
+    .track .l{color:rgba(240,232,216,.5);text-align:right;font-size:11px}
+    /* Sleeve B — back, with credits and stats */
+    .sleeve-b{flex:1;background:#16110d;padding:28px;color:#f0e8d8;position:relative;min-height:520px;display:flex;flex-direction:column;gap:18px}
+    .sleeve-b::after{content:"";position:absolute;inset:0;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='1' fill='%23000' opacity='.05'/></svg>") repeat;background-size:8px 8px;pointer-events:none}
+    .liner-h{font-family:'Bebas Neue',Inter,sans-serif;font-size:24px;letter-spacing:.04em;color:#fff;border-bottom:2px solid #ff8a40;padding-bottom:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}
+    .liner-h em{font-style:normal;color:#ff8a40;font-size:14px;letter-spacing:.18em;text-transform:uppercase}
+    .liner-notes{font-family:'Special Elite',monospace;font-size:13.5px;line-height:1.55;color:rgba(240,232,216,.85);font-style:italic}
+    .liner-notes b{color:#ff8a40;font-style:normal;font-weight:400}
+    /* Stats — printed on the back like credits */
+    .credits-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.5}
+    .credit{display:flex;justify-content:space-between;border-bottom:1px dotted rgba(240,232,216,.2);padding:4px 0}
+    .credit .k{color:rgba(240,232,216,.55);text-transform:uppercase;letter-spacing:.1em;font-size:9px}
+    .credit .v{color:#f0e8d8;font-weight:700}
+    /* B-side track list */
+    .tracklisting-b h3{font-family:'Bebas Neue',Inter,sans-serif;font-size:18px;letter-spacing:.16em;color:#ff8a40;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}
+    .tracklisting-b h3 small{color:rgba(240,232,216,.5);font-size:10px;letter-spacing:.2em;font-family:'JetBrains Mono',monospace;font-weight:400}
+    /* Center label / spine */
+    .center-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a40 0%,#a04020 50%,#3a1408 100%);box-shadow:0 0 0 4px #000,0 0 30px rgba(255,140,40,.4);z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;animation:spin 18s linear infinite}
+    @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+    .center-label::before{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;background:#000;border-radius:50%;transform:translate(-50%,-50%);box-shadow:inset 0 0 4px rgba(255,255,255,.3)}
+    .center-label::after{content:"";position:absolute;inset:18px;border:1px solid rgba(0,0,0,.4);border-radius:50%}
+    .center-text{position:relative;z-index:2;font-family:'Bebas Neue',Inter,sans-serif;font-size:14px;letter-spacing:.04em;line-height:1;padding:0 8px}
+    .center-text small{display:block;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.18em;color:rgba(255,255,255,.7);margin-top:4px;font-weight:400}
+    /* Bottom credits */
+    .liner-foot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(240,232,216,.15);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(240,232,216,.5);display:flex;justify-content:space-between}
+    /* Description below */
+    .desc{margin-top:32px;text-align:center;color:#aaa;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;max-width:560px}
+    .desc strong{color:#ff8a40;font-weight:700}
+    .cta{margin-top:20px;display:flex;gap:10px;justify-content:center}
+    .cta a{padding:14px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:#ff8a40;color:#0a0807;text-decoration:none}
+    .cta a.outline{background:transparent;color:#ff8a40;outline:1px solid #ff8a40}
+    @media(max-width:880px){.gatefold{flex-direction:column}.gatefold::before{left:0;right:0;top:50%;width:auto;height:1px}.center-label{display:none}}
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <span>v8 · VINYL LP · 8/10</span>
+    <a href="/prototypes/">← back to gallery</a>
+  </div>
+
+  <article class="gatefold">
+    <section class="sleeve-a">
+      <div class="label-strip">
+        <span><strong>DEVPRINT RECORDS</strong> · DPR-1134</span>
+        <span>Side A · 33⅓ rpm</span>
+      </div>
+      <div class="album-art">
+        <img src="https://avatars.githubusercontent.com/u/170270?v=4" alt="" />
+        <div class="album-edition">★ Legendary Pressing</div>
+        <div class="album-text">
+          <div class="album-artist">SINDRE SORHUS</div>
+          <div class="album-title">a tools maker · 2003 — present</div>
+        </div>
+      </div>
+      <div class="tracklisting-a">
+        <h3>Side A — The Hits <small>most-starred releases</small></h3>
+        <div class="track"><span class="n">A1.</span><span class="t">awesome</span><span class="l">★ 463k · 23:14</span></div>
+        <div class="track"><span class="n">A2.</span><span class="t">awesome-nodejs</span><span class="l">★ 65k · 12:08</span></div>
+        <div class="track"><span class="n">A3.</span><span class="t">awesome-electron</span><span class="l">★ 27k · 09:42</span></div>
+        <div class="track"><span class="n">A4.</span><span class="t">type-fest</span><span class="l">★ 17k · 06:31</span></div>
+      </div>
+    </section>
+
+    <section class="sleeve-b">
+      <div class="liner-h">Liner Notes <em>credits</em></div>
+      <p class="liner-notes">Recorded on stage in <b>Stockholm</b> over 23 years. Performed and produced by <b>@sindresorhus</b>, mixed by community of 79,088 followers. <b>56 tracks in JavaScript</b>, 13 in TypeScript, 11 in Swift, with assists from a recurring band of collaborators (lpinca, kevva, RichardLitt, +70 more). Front cover: live photo, Stockholm office. <em>For best playback, install with npm.</em></p>
+
+      <div class="credits-grid">
+        <div class="credit"><span class="k">Stars (total)</span><span class="v">842,530</span></div>
+        <div class="credit"><span class="k">Releases</span><span class="v">1,134</span></div>
+        <div class="credit"><span class="k">Followers</span><span class="v">79,088</span></div>
+        <div class="credit"><span class="k">Tier</span><span class="v">Legendary</span></div>
+        <div class="credit"><span class="k">Build</span><span class="v">99 / 99</span></div>
+        <div class="credit"><span class="k">Impact</span><span class="v">99 / 99</span></div>
+        <div class="credit"><span class="k">Community</span><span class="v">99 / 99</span></div>
+        <div class="credit"><span class="k">Momentum</span><span class="v">51 / 99</span></div>
+      </div>
+
+      <div class="tracklisting-b">
+        <h3>Side B — Deep Cuts <small>recent + niche</small></h3>
+        <div class="track"><span class="n">B1.</span><span class="t">quick-look-plugins</span><span class="l">★ 18k · macOS</span></div>
+        <div class="track"><span class="n">B2.</span><span class="t">ky</span><span class="l">★ 16k · http</span></div>
+        <div class="track"><span class="n">B3.</span><span class="t">execa</span><span class="l">★ 6k · cli</span></div>
+        <div class="track"><span class="n">B4.</span><span class="t">p-queue</span><span class="l">★ 3.5k · async</span></div>
+        <div class="track"><span class="n">B5.</span><span class="t">refined-github</span><span class="l">★ 24k · ext</span></div>
+      </div>
+
+      <div class="liner-foot">
+        <span>devprint.dev/sindresorhus</span>
+        <span>℗ 2026 — public data only · sleeve printed live</span>
+      </div>
+    </section>
+
+    <div class="center-label">
+      <div class="center-text">DEVPRINT<br>RECORDS<small>33⅓ · 1134</small></div>
+    </div>
+  </article>
+
+  <p class="desc">Devprint as a <strong>gatefold LP</strong>. Front cover is the album art, back has liner notes and B-side tracks. Spinning record disc sits at the centre, casting shadow on both sleeves. The <strong>album metaphor</strong> works for any prolific dev — every push is a new pressing.</p>
+
+  <div class="cta">
+    <a href="#">↗ Drop the record</a>
+    <a class="outline" href="#">Print sleeve</a>
+  </div>
+</body>
+</html>

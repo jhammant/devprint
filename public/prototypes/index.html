@@ -59,6 +59,26 @@
     .preview-7-stub{width:64px;background:#0a4a6e;color:#fff;padding:14px 8px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;border-left:2px dashed rgba(255,255,255,.5);font-family:'Bebas Neue',sans-serif;text-align:center;letter-spacing:.06em;font-size:14px;line-height:1.1;background-image:radial-gradient(circle at left center,#fff 0,#fff 4px,transparent 5px);background-size:12px 12px;background-repeat:repeat-y;background-position:left center}
     .preview-7-stub small{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;color:rgba(255,255,255,.7)}
     .preview-7 span{display:none}
+    /* V8 vinyl preview */
+    .preview-8{background:radial-gradient(circle at 30% 30%,#3a1408 0%,#16110d 100%);position:relative;color:#ff8a40;font-family:'Bebas Neue',Inter,sans-serif;font-size:36px;letter-spacing:.04em}
+    .preview-8::before{content:"";position:absolute;left:50%;top:50%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a40,#a04020 50%,#3a1408 100%);transform:translate(-50%,-50%);box-shadow:0 0 0 4px #000,0 0 30px rgba(255,140,40,.4);animation:vinylspin 8s linear infinite}
+    .preview-8::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;background:#000;border-radius:50%;transform:translate(-50%,-50%);z-index:2}
+    @keyframes vinylspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+    .preview-8 span{position:relative;z-index:3;background:rgba(0,0,0,.75);padding:5px 11px;border-radius:3px;text-shadow:0 0 12px currentColor}
+    .tag-8{background:#ff8a40;color:#0a0807}
+    /* V9 subway preview */
+    .preview-9{background:#f7f4ed;color:#111;font-family:Inter,Helvetica,sans-serif;font-weight:900;letter-spacing:-.03em;position:relative;flex-direction:column;font-size:20px}
+    .preview-9::before{content:"";position:absolute;top:0;left:0;right:0;height:24px;background:#111}
+    .preview-9::after{content:"";position:absolute;top:24px;left:0;right:0;bottom:0;background:linear-gradient(180deg,transparent 50%,#111 50%,#111 calc(50% + 2px),transparent calc(50% + 2px))}
+    .preview-9 span{position:relative;z-index:2;display:inline-flex;align-items:center;gap:8px;font-size:24px}
+    .preview-9 span::before{content:"";display:block;width:24px;height:24px;background:#e63946;border-radius:50%}
+    .tag-9{background:#e63946;color:#fff}
+    /* V10 receipt preview */
+    .preview-10{background:#f8f5ec;color:#1a1a1a;font-family:'Special Elite',ui-monospace,monospace;font-size:14px;letter-spacing:.16em;position:relative;padding:0}
+    .preview-10::before{content:"DEVPRINT · RCPT 1134";position:absolute;top:18px;left:0;right:0;text-align:center;font-size:12px;letter-spacing:.16em;color:#1a1a1a;font-weight:400}
+    .preview-10::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:radial-gradient(circle at 5px 10px,#0a0a0a 0,#0a0a0a 4px,transparent 5px);background-size:10px 10px;background-repeat:repeat-x}
+    .preview-10 span{position:relative;z-index:2;border:2px solid #a04020;color:#a04020;padding:5px 11px;font-weight:400;font-size:14px;letter-spacing:.18em;transform:rotate(-3deg);background:#f8f5ec}
+    .tag-10{background:#a04020;color:#f8f5ec;font-family:'Special Elite',monospace;letter-spacing:.16em}
     .footer{color:#666;font-size:13px;line-height:1.6;border-top:1px solid #222;padding-top:24px;font-family:Inter,ui-sans-serif,system-ui}
     .footer a{color:#fff}
   </style>
@@ -66,7 +86,16 @@
 <body>
   <div class="wrap">
     <h1>Style overhaul prototypes</h1>
-    <p class="lead">Seven takes on what Devprint could look like as a sharable virtual CV. Each is a static mockup wired with the same sindresorhus sample data so the visual direction is the only variable. Pick favourites; tell me what to mash up. <strong style="color:#ffd166">Round 2 (v4–v7) goes deeper on what you flagged in round 1.</strong></p>
+    <p class="lead">Ten takes on what Devprint could look like as a sharable virtual CV. Each is a static mockup wired with the same sindresorhus sample data so the visual direction is the only variable. Pick favourites; tell me what to mash up.</p>
+
+    <a href="/prototypes/selector.html" style="display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(135deg,rgba(49,217,255,.12),rgba(255,92,200,.12),rgba(255,209,102,.10));border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:22px 26px;margin-bottom:36px;text-decoration:none;color:inherit;transition:transform .15s,border-color .15s">
+      <div>
+        <div style="font-family:Inter,sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#62f0a7;font-weight:700;margin-bottom:6px">★ NEW · interactive picker</div>
+        <div style="font-family:Inter,sans-serif;font-weight:900;font-size:28px;letter-spacing:-.02em;line-height:1.1;color:#fff">Try the style picker →</div>
+        <div style="font-family:Inter,sans-serif;font-size:14px;color:#999;margin-top:6px;line-height:1.4">Full-screen carousel of all 10 styles. Use ← → to flick through, click any thumbnail to jump. Hash-linkable so you can DM a single style.</div>
+      </div>
+      <div style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:48px;font-weight:900;color:#fff;letter-spacing:-.04em;flex-shrink:0">→</div>
+    </a>
 
     <div style="font-family:Inter,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:#666;margin-bottom:14px">★ Round 1 — opening directions</div>
     <div class="grid">
@@ -138,8 +167,38 @@
       </a>
     </div>
 
+    <div style="font-family:Inter,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:#666;margin:32px 0 14px">★ Round 3 — go further (vinyl · grid · receipt)</div>
+    <div class="grid">
+      <a class="card" href="./v8-vinyl.html">
+        <div class="preview preview-8"><span>33⅓</span></div>
+        <div class="body">
+          <div class="name">v8 — Vinyl LP</div>
+          <div class="desc">Gatefold record sleeve. Album art on side A, liner notes on side B, spinning centre label sitting between. Top hits + deep cuts. Every push is a new pressing.</div>
+          <span class="tag tag-8">share-as-record</span>
+        </div>
+      </a>
+      <a class="card" href="./v9-subway.html">
+        <div class="preview preview-9"><span>STOP 23</span></div>
+        <div class="body">
+          <div class="name">v9 — Subway Poster</div>
+          <div class="desc">Massimo Vignelli grid. Stacked single-tone blocks, all-Helvetica, one accent colour, hard rules. Reads as transit signage but works as a print-quality CV.</div>
+          <span class="tag tag-9">share-as-poster</span>
+        </div>
+      </a>
+      <a class="card" href="./v10-receipt.html">
+        <div class="preview preview-10"><span>★ PAID ★</span></div>
+        <div class="body">
+          <div class="name">v10 — Long Receipt</div>
+          <div class="desc">Thermal-paper receipt. Items, subtotals, ★ TIER · LEGENDARY total, "PAID" stamp, barcode. Fits perfectly in a tweet image. "My GitHub receipt" writes its own caption.</div>
+          <span class="tag tag-10">share-as-receipt</span>
+        </div>
+      </a>
+    </div>
+
     <div class="footer">
-      All seven carry the same virtual-CV scaffolding (avatar, tagline, "open to opportunities" pill, battle stats with formulas exposed, repo highlights, share CTAs, live-data colophon). The visual language is what changes.
+      All ten carry the same virtual-CV scaffolding (avatar, tagline, "open to opportunities" pill, battle stats with formulas exposed, repo highlights, share CTAs, live-data colophon). The visual language is what changes.
+      <br><br>
+      <strong style="color:#62f0a7">→ <a href="/prototypes/selector.html">Open the style picker</a></strong> to flip through all ten with arrow keys.
       <br><br>
       <strong style="color:#ffd166">Mash-up moves I can ship in one round:</strong>
       <ul style="margin:10px 0 0 22px;line-height:1.8">

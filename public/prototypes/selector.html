@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Choose your devprint · Style picker</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden}
+    body{font-family:Inter,ui-sans-serif,system-ui;background:#0a0a0a;color:#fff;display:flex;flex-direction:column}
+    /* Top bar */
+    .top{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid #1c1c1c;background:rgba(10,10,10,.95);z-index:10;position:relative}
+    .brand{font-weight:900;font-size:18px;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+    .brand .mark{width:26px;height:26px;border-radius:8px;background:conic-gradient(from 210deg,#31d9ff,#7c5cff,#ff5cc8,#ffd166,#31d9ff);box-shadow:0 0 18px rgba(124,92,255,.5)}
+    .top h1{font-size:14px;font-weight:700;letter-spacing:-.01em;margin-left:24px}
+    .top h1 small{color:#888;font-weight:400;font-family:'JetBrains Mono',monospace;font-size:11px;margin-left:8px;letter-spacing:.04em}
+    .top .right{display:flex;align-items:center;gap:14px}
+    .counter{font-family:'JetBrains Mono',monospace;font-size:13px;color:#888}
+    .counter b{color:#fff}
+    .top a.tiny{color:#888;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em}
+    .top a.tiny:hover{color:#fff}
+    .use-btn{padding:9px 16px;background:linear-gradient(135deg,#31d9ff,#7c5cff);color:#fff;border:0;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;letter-spacing:-.01em;box-shadow:0 8px 24px rgba(124,92,255,.4);transition:transform .12s}
+    .use-btn:hover{transform:translateY(-1px)}
+    /* Stage */
+    .stage{flex:1;position:relative;overflow:hidden;background:#0a0a0a}
+    .frame-wrap{position:absolute;inset:0;display:flex;transition:transform .55s cubic-bezier(.2,.8,.2,1);will-change:transform}
+    .frame-wrap iframe{flex:0 0 100%;width:100%;height:100%;border:0;background:#000}
+    /* Side arrows */
+    .arrow{position:absolute;top:50%;transform:translateY(-50%);width:54px;height:54px;border-radius:50%;background:rgba(20,20,20,.85);border:1px solid #333;color:#fff;font-size:24px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;backdrop-filter:blur(8px);transition:transform .15s,background .15s}
+    .arrow:hover{background:rgba(40,40,40,.95);transform:translateY(-50%) scale(1.05)}
+    .arrow.prev{left:18px}
+    .arrow.next{right:18px}
+    .arrow:disabled{opacity:.3;cursor:not-allowed}
+    /* Bottom dock */
+    .dock{flex-shrink:0;background:rgba(10,10,10,.96);border-top:1px solid #1c1c1c;padding:14px 18px;backdrop-filter:blur(12px);z-index:10;position:relative}
+    .dock-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+    .dock-strip::-webkit-scrollbar{height:4px}
+    .dock-strip::-webkit-scrollbar-track{background:#1c1c1c}
+    .dock-strip::-webkit-scrollbar-thumb{background:#444}
+    .thumb{flex-shrink:0;width:140px;height:84px;border-radius:10px;border:2px solid #222;background:#111;cursor:pointer;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;letter-spacing:-.01em;transition:border-color .15s,transform .12s}
+    .thumb:hover{transform:translateY(-2px)}
+    .thumb.active{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.2)}
+    .thumb .label{position:absolute;left:8px;bottom:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7);font-weight:700}
+    .thumb .num{position:absolute;left:8px;top:6px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7);font-weight:700;opacity:.8}
+    /* Per-style thumb backgrounds */
+    .t-1{background:radial-gradient(ellipse at top,#1a0633 0%,#000 100%);color:#ffd166}
+    .t-2{background:linear-gradient(180deg,#fff5e0,#f0e0c0);color:#a02828}
+    .t-3{background:linear-gradient(135deg,#0d0a2b,#1a0a3d 50%,#000);color:#00f0ff}
+    .t-4{background:linear-gradient(160deg,#1a0030,#3a0a55 50%,#0a0530);color:#ffd166}
+    .t-5{background:linear-gradient(180deg,#fff5e0,#f0e0c0);color:#ff3030}
+    .t-6{background:#f4ead0;color:#a02828}
+    .t-7{background:linear-gradient(90deg,#fff 70%,#0a4a6e 70%);color:#0a4a6e}
+    .t-8{background:radial-gradient(circle at 30% 40%,#ff8a40,#3a1408);color:#fff}
+    .t-9{background:#f7f4ed;color:#e63946}
+    .t-10{background:#f8f5ec;color:#a04020}
+    /* Hint */
+    .hint{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;letter-spacing:.05em;background:rgba(20,20,20,.7);padding:6px 12px;border-radius:999px;backdrop-filter:blur(8px);pointer-events:none;z-index:5;transition:opacity .3s}
+    .hint kbd{font-family:inherit;background:#333;color:#fff;padding:1px 6px;border-radius:3px;border:1px solid #555;font-weight:700;font-size:10px}
+    .stage:hover .hint{opacity:.4}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="mark"></span>devprint</div>
+    <h1>Choose your style <small id="currentName">— v1 Trading Card</small></h1>
+    <div class="right">
+      <span class="counter"><b id="idx">1</b> / 10</span>
+      <a class="tiny" href="/prototypes/">all in grid view</a>
+      <button class="use-btn" id="useBtn">Use this style →</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <button class="arrow prev" id="prev" aria-label="Previous">‹</button>
+    <div class="frame-wrap" id="wrap"></div>
+    <button class="arrow next" id="next" aria-label="Next">›</button>
+    <div class="hint">Use <kbd>←</kbd> <kbd>→</kbd> to flick · <kbd>Esc</kbd> to leave</div>
+  </div>
+
+  <nav class="dock">
+    <div class="dock-strip" id="dock"></div>
+  </nav>
+
+  <script>
+    const styles = [
+      { id: 'v1-arcade',       name: 'Trading Card',  desc: 'share-as-flex',  url: '/prototypes/v1-arcade.html',       cls: 't-1' },
+      { id: 'v2-letterhead',   name: 'Letterhead',    desc: 'share-as-CV',    url: '/prototypes/v2-letterhead.html',   cls: 't-2' },
+      { id: 'v3-holo',         name: 'Holo Profile',  desc: 'share-as-vibe',  url: '/prototypes/v3-holo.html',         cls: 't-3' },
+      { id: 'v4-holofoil',     name: 'Holofoil',      desc: 'share-as-grail', url: '/prototypes/v4-holofoil.html',     cls: 't-4' },
+      { id: 'v5-magazine',     name: 'Magazine',      desc: 'share-as-news',  url: '/prototypes/v5-magazine.html',     cls: 't-5' },
+      { id: 'v6-newspaper',    name: 'The Times',     desc: 'broadside',      url: '/prototypes/v6-newspaper.html',    cls: 't-6' },
+      { id: 'v7-boardingpass', name: 'Dev Pass',      desc: 'tear-off ticket',url: '/prototypes/v7-boardingpass.html', cls: 't-7' },
+      { id: 'v8-vinyl',        name: 'Vinyl LP',      desc: 'gatefold',       url: '/prototypes/v8-vinyl.html',        cls: 't-8' },
+      { id: 'v9-subway',       name: 'Subway Poster', desc: 'Vignelli grid',  url: '/prototypes/v9-subway.html',       cls: 't-9' },
+      { id: 'v10-receipt',     name: 'Receipt',       desc: 'long thermal',   url: '/prototypes/v10-receipt.html',     cls: 't-10' },
+    ];
+
+    const wrap = document.getElementById('wrap');
+    const dock = document.getElementById('dock');
+    const idxEl = document.getElementById('idx');
+    const currentName = document.getElementById('currentName');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    const useBtn = document.getElementById('useBtn');
+
+    // Build iframes lazily — only the active and adjacent ones get a real src
+    // to avoid burning CPU on every prototype animating in the background.
+    const frames = styles.map(() => {
+      const ifr = document.createElement('iframe');
+      ifr.loading = 'lazy';
+      ifr.allow = '';
+      wrap.appendChild(ifr);
+      return ifr;
+    });
+
+    // Build dock thumbs
+    styles.forEach((s, i) => {
+      const t = document.createElement('button');
+      t.className = `thumb ${s.cls}`;
+      t.dataset.idx = i;
+      t.innerHTML = `<span class="num">${i + 1 < 10 ? '0' + (i + 1) : i + 1}</span><span class="label">${s.name}</span>`;
+      t.addEventListener('click', () => goTo(i));
+      dock.appendChild(t);
+    });
+
+    let active = 0;
+    function loadFrame(i) {
+      if (frames[i] && !frames[i].src) frames[i].src = styles[i].url;
+    }
+    function unloadFrame(i) {
+      // Keep a small window of loaded frames to keep transitions smooth.
+      if (frames[i] && Math.abs(i - active) > 2) frames[i].removeAttribute('src');
+    }
+    function goTo(i) {
+      i = Math.max(0, Math.min(styles.length - 1, i));
+      active = i;
+      wrap.style.transform = `translateX(-${i * 100}%)`;
+      idxEl.textContent = i + 1;
+      currentName.textContent = `— ${styles[i].name}`;
+      // Load adjacent
+      [i - 1, i, i + 1].forEach((j) => { if (j >= 0 && j < styles.length) loadFrame(j); });
+      // Unload distant
+      frames.forEach((_, j) => unloadFrame(j));
+      // Update dock active state
+      [...dock.children].forEach((el, j) => el.classList.toggle('active', j === i));
+      // Reflect in URL hash so reload preserves and shareable links work
+      history.replaceState(null, '', `#${styles[i].id}`);
+      // Update use-btn link
+      useBtn.dataset.id = styles[i].id;
+    }
+
+    prevBtn.addEventListener('click', () => goTo(active - 1));
+    nextBtn.addEventListener('click', () => goTo(active + 1));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') goTo(active - 1);
+      if (e.key === 'ArrowRight') goTo(active + 1);
+      if (e.key === 'Escape') location.href = '/prototypes/';
+    });
+    useBtn.addEventListener('click', () => {
+      const s = styles[active];
+      // The live SPA doesn't yet honour ?style= — once it does, this will land
+      // someone on devprint.dev/<their-username>?style=<id>. For now, surface
+      // the choice so the user can copy the slug.
+      const slug = s.id;
+      const ok = confirm(`Selected: ${s.name} (${slug})\n\nThe live site doesn't yet swap styles per-user — that's a follow-up wiring change. For now, copy the slug "${slug}" so we know which one you picked. OK to copy to clipboard?`);
+      if (ok) {
+        navigator.clipboard.writeText(slug);
+      }
+    });
+
+    // Boot from hash if present
+    const hash = location.hash.replace('#', '');
+    const start = Math.max(0, styles.findIndex((s) => s.id === hash));
+    goTo(start);
+  </script>
+</body>
+</html>
