@@ -105,10 +105,12 @@ function setMode(m: Mode) {
 }
 
 async function build(raw: string, scroll = true) {
-  $('loading').style.display = 'block';
+  $('loading').style.display = 'none';
   $('error').style.display = 'none';
   $('result').classList.remove('show');
   ($('go') as HTMLButtonElement).disabled = true;
+  showLoader(cleanTarget(raw) || raw);
+  setLoaderStatus('Fetching profile…', 8);
 
   try {
     const target = cleanTarget(raw);
@@ -121,14 +123,18 @@ async function build(raw: string, scroll = true) {
     const repoName = bits[1];
 
     const profile = await client.getUser(owner);
+    setLoaderStatus(`Found @${profile.login} · ${profile.public_repos} public repos`, 22);
     let reposRaw: GhRepo[];
     let repo: GhRepo | undefined;
     if (isRepo) {
+      setLoaderStatus(`Reading ${owner}/${repoName}…`, 32);
       repo = await client.getRepo(owner, repoName);
       reposRaw = [repo];
     } else {
+      setLoaderStatus(`Listing up to 100 of ${profile.public_repos} repos…`, 32);
       reposRaw = await client.listUserRepos(owner, { max: 100 });
     }
+    setLoaderStatus(`Scoring ${reposRaw.length} repos · detecting stacks…`, 52);
 
     const repos = reposRaw.filter((r) => !r.fork || isRepo).sort((a, b) => scoreRepo(b) - scoreRepo(a));
     const langs: Record<string, number> = {};
@@ -150,12 +156,14 @@ async function build(raw: string, scroll = true) {
 
     if (renderer) {
       // Hide the default chrome — the renderer takes over.
+      setLoaderStatus(`Loading "${renderer.name}" view · pulling agent pack + insights…`, 70);
       const wrap = document.querySelector<HTMLElement>('.wrap');
       const [packResult, insights] = await Promise.all([
         fetchAgentPack(target).catch(() => undefined),
         fetchInsights(target),
       ]);
       lastPack = packResult ?? '';
+      setLoaderStatus(`Rendering ${renderer.name.toLowerCase()}…`, 92);
       const data: ProfileData = {
         profile, repo, isRepo, repos, topLangs, langs, themes, archetype: arch,
         totalStars, battle, ...(insights ? { insights } : {}), pack: lastPack, target,
@@ -172,7 +180,7 @@ async function build(raw: string, scroll = true) {
       host.innerHTML = out.html + renderStylePicker(renderer.id, target, currentMode);
       out.mount?.(host);
       wireStylePicker(host, target, currentMode);
-      $('loading').style.display = 'none';
+      hideLoader();
       ($('go') as HTMLButtonElement).disabled = false;
       return;
     }
@@ -190,6 +198,7 @@ async function build(raw: string, scroll = true) {
       renderInsights(profile, repos, totalStars);
     }
 
+    setLoaderStatus('Pulling agent pack + insights from Lambda…', 70);
     // Fetch the agent pack + structured insights from the Lambda in parallel.
     // The Lambda has a server-side GitHub token + CloudFront cache; doing
     // this client-side would double our GitHub-API calls per render against
@@ -198,6 +207,7 @@ async function build(raw: string, scroll = true) {
       fetchAgentPack(target).catch(() => undefined),
       fetchInsights(target),
     ]);
+    setLoaderStatus('Drawing the card…', 92);
     lastPack = packResult ?? `# Devprint Agent Pack: ${target}\n\nThe agent pack endpoint is currently unreachable. Try again in a moment.\n`;
     $('agentPack').textContent = lastPack;
 
@@ -239,10 +249,98 @@ async function build(raw: string, scroll = true) {
   } catch (e) {
     $('error').textContent = e instanceof Error ? e.message : String(e);
     $('error').style.display = 'block';
+    hideLoader();
   } finally {
     $('loading').style.display = 'none';
     ($('go') as HTMLButtonElement).disabled = false;
+    hideLoader();
   }
+}
+
+// ---- full-screen loader (initial render + style takeover) -----------------
+
+function showLoader(target: string): void {
+  let el = document.getElementById('dpLoader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'dpLoader';
+    el.innerHTML = `
+      <div class="dpL-bg"></div>
+      <div class="dpL-mark"></div>
+      <div class="dpL-target" id="dpLTarget"></div>
+      <div class="dpL-status" id="dpLStatus">Initialising…</div>
+      <div class="dpL-bar"><div class="dpL-fill" id="dpLFill"></div></div>
+      <div class="dpL-tip" id="dpLTip">tip · use <kbd>?style=letterhead</kbd> to switch view</div>
+    `;
+    document.body.appendChild(el);
+    if (!document.getElementById('dpLoaderStyle')) {
+      const s = document.createElement('style');
+      s.id = 'dpLoaderStyle';
+      s.textContent = `
+#dpLoader{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,ui-sans-serif,system-ui;color:#fff;opacity:0;animation:dpL-in .25s ease-out forwards}
+.dpL-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(124,92,255,.32),transparent 40%),radial-gradient(ellipse at 75% 80%,rgba(49,217,255,.24),transparent 45%),linear-gradient(180deg,#070913 0%,#0a0d18 60%,#070913 100%);z-index:-1}
+.dpL-bg::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse at center,#000 30%,transparent 75%)}
+.dpL-mark{width:88px;height:88px;border-radius:24px;background:conic-gradient(from 210deg,#31d9ff,#7c5cff,#ff5cc8,#ffd166,#62f0a7,#31d9ff);box-shadow:0 0 60px rgba(124,92,255,.5),inset 0 0 0 4px rgba(0,0,0,.3);animation:dpL-spin 2.4s linear infinite,dpL-pulse 2s ease-in-out infinite alternate;margin-bottom:30px;position:relative}
+.dpL-mark::before{content:"";position:absolute;inset:14px;background:#070913;border-radius:14px}
+.dpL-mark::after{content:"D";position:absolute;inset:14px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:34px;letter-spacing:-.05em;background:linear-gradient(135deg,#fff,#aaa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+@keyframes dpL-spin{to{transform:rotate(360deg)}}
+@keyframes dpL-pulse{from{box-shadow:0 0 50px rgba(124,92,255,.4),inset 0 0 0 4px rgba(0,0,0,.3)}to{box-shadow:0 0 90px rgba(255,92,200,.55),inset 0 0 0 4px rgba(0,0,0,.3)}}
+.dpL-target{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#62f0a7;margin-bottom:10px;text-shadow:0 0 12px rgba(98,240,167,.5)}
+.dpL-status{font-weight:700;font-size:18px;letter-spacing:-.01em;margin-bottom:24px;text-align:center;max-width:80vw;min-height:1.4em;transition:opacity .2s}
+.dpL-bar{width:280px;max-width:80vw;height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;position:relative}
+.dpL-bar::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);animation:dpL-shimmer 1.5s linear infinite;background-size:200% 100%}
+@keyframes dpL-shimmer{from{background-position:-100% 0}to{background-position:100% 0}}
+.dpL-fill{height:100%;background:linear-gradient(90deg,#31d9ff,#7c5cff,#ff5cc8);border-radius:99px;width:0%;transition:width .4s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 18px rgba(124,92,255,.5)}
+.dpL-tip{margin-top:30px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#888;letter-spacing:.04em}
+.dpL-tip kbd{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);padding:2px 6px;border-radius:4px;color:#fff;font-family:inherit;font-size:10px}
+@keyframes dpL-in{from{opacity:0}to{opacity:1}}
+@keyframes dpL-out{from{opacity:1}to{opacity:0}}
+#dpLoader.dpL-leaving{animation:dpL-out .35s ease-out forwards}
+@media(prefers-reduced-motion:reduce){.dpL-mark{animation:dpL-pulse 3s ease-in-out infinite alternate}.dpL-bar::before{animation:none}}
+`;
+      document.head.appendChild(s);
+    }
+  }
+  el.classList.remove('dpL-leaving');
+  el.style.display = 'flex';
+  const targetEl = document.getElementById('dpLTarget');
+  if (targetEl) targetEl.textContent = `▸ ${target}`;
+  // Rotating tips while we wait.
+  const tips = [
+    'tip · share with <kbd>?style=letterhead</kbd> for a printed CV view',
+    'tip · <kbd>?style=trading-card</kbd> turns it into a Top-Trumps card',
+    'tip · <kbd>?style=holofoil</kbd> tilts the card to your mouse',
+    'tip · click <kbd>all 10 →</kbd> to see every prototype',
+    'tip · the agent pack at <kbd>/&lt;user&gt;.md</kbd> is what AI agents read',
+  ];
+  const tipEl = document.getElementById('dpLTip');
+  if (tipEl) {
+    tipEl.innerHTML = tips[0];
+    let i = 1;
+    const id = setInterval(() => {
+      if (!document.getElementById('dpLoader') || document.getElementById('dpLoader')!.style.display === 'none') {
+        clearInterval(id);
+        return;
+      }
+      tipEl.style.opacity = '0';
+      setTimeout(() => { tipEl.innerHTML = tips[i % tips.length]; tipEl.style.opacity = '.7'; i++; }, 200);
+    }, 3200);
+  }
+}
+
+function setLoaderStatus(text: string, pct: number): void {
+  const status = document.getElementById('dpLStatus');
+  const fill = document.getElementById('dpLFill');
+  if (status) status.textContent = text;
+  if (fill) fill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+}
+
+function hideLoader(): void {
+  const el = document.getElementById('dpLoader');
+  if (!el) return;
+  setLoaderStatus('Done', 100);
+  el.classList.add('dpL-leaving');
+  setTimeout(() => { el.style.display = 'none'; }, 380);
 }
 
 function renderProfile(
