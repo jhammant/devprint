@@ -106,3 +106,8 @@ body.has-result .result{margin-top:10px}
 .related-chip-devprint:hover{background:rgba(49,217,255,.22);color:white}
 .related-via{display:none}
 @media(max-width:900px){.hero,.grid,.grid2{grid-template-columns:1fr}.preview{order:-1}.search{flex-direction:column}button{padding:15px}.repos{grid-template-columns:1fr}.barline{grid-template-columns:90px 1fr 34px}.nav{align-items:flex-start;flex-direction:column;margin-bottom:30px}.stack-repo-row{grid-template-columns:1fr}}
+/* When any non-default style is active the .wrap chrome stays out of the
+ * way. Driven by the `body.style-takeover` class so the swap is one DOM
+ * mutation, not the inline-style ping-pong that used to flash. */
+body.style-takeover .wrap{display:none!important}
+body.style-takeover #app{display:none!important}

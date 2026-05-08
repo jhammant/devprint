@@ -93,6 +93,10 @@ let lastPack = '';
 let lastProfileData: ProfileData | null = null;
 let lastStyleUnmount: (() => void) | null = null;
 let lastTarget = '';
+// Tracks which target's dashboard markup is currently in the DOM under
+// #result. Lets applyStyle('default') skip a re-render when the dashboard
+// is already there (just unmount the takeover and it reappears instantly).
+let dashboardRenderedFor: string | null = null;
 
 app.innerHTML = `
 <div class="wrap">
@@ -214,63 +218,7 @@ async function build(raw: string, scroll = true) {
       return;
     }
 
-    // Default-view rendering — body/wrap chrome restored, card panels filled in.
-    unmountAnyStyle();
-    document.querySelector<HTMLElement>('.wrap')!.style.display = '';
-
-    renderProfile(profile, repo, isRepo, totalStars, arch, themes, repos, topLangs);
-    renderBattleCard(battle, isRepo);
-    renderStrengths(topLangs);
-    renderThemes(themes);
-    renderRepos(repos, isRepo);
-    // User-only panels: insights tagline is derived from the user-portfolio
-    // listUserRepos response and doesn't apply to single-repo pages. Hide it
-    // so a repo page doesn't show one empty bordered box.
-    $('insightsCard').classList.toggle('hidden', isRepo);
-    if (!isRepo) {
-      renderInsights(profile, repos, totalStars);
-    }
-
-    $('agentPack').textContent = lastPack;
-
-    renderStack(insights, isRepo, owner);
-    renderCommitStyle(insights, isRepo);
-    renderHeatmap(insights);
-    renderRelated(insights, isRepo);
-    // Activity + health both depend on the JSON sidecar's commit-activity /
-    // need a real subset of repos; renderActivity / renderHealth handle their
-    // own visibility (hide the parent .card when there's no data).
-    if (isRepo) {
-      // Repo pages: hide the user-activity row entirely; nothing here applies.
-      $('userActivityRow').classList.add('hidden');
-    } else {
-      $('userActivityRow').classList.remove('hidden');
-      renderActivity(insights);
-      renderHealth(repos);
-    }
-
-    const agent = currentMode === 'agent';
-    $('graph').classList.toggle('hidden', agent);
-    $('agentPack').classList.toggle('hidden', !agent);
-    $('copyAgent').classList.toggle('hidden', !agent);
-    $('mainPanelTitle').textContent = agent ? 'Agent context pack' : 'Builder graph';
-    if (!agent) renderGraph(topLangs, themes, arch);
-    $('result').classList.add('show');
-    // Shrink the hero so the battle card / stats are the first thing the
-    // user sees once they have a result. CSS handles the actual collapse.
-    document.body.classList.add('has-result');
-    // Mount the floating style picker so visitors can flip into one of the
-    // alternate views with a click. The picker markup includes a sibling
-    // <style> block, so move ALL children (not just the first one).
-    const existingPicker = document.getElementById('dpStylePicker');
-    if (existingPicker) existingPicker.remove();
-    document.querySelector('#dpStylePickerStyle')?.remove();
-    const pickerHost = document.createElement('div');
-    pickerHost.id = 'dpStylePickerHost';
-    pickerHost.innerHTML = renderStylePicker('default', target, currentMode);
-    while (pickerHost.firstChild) document.body.appendChild(pickerHost.firstChild);
-    wireStylePicker(document, target, currentMode);
-    if (scroll) $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    renderDashboard(target, data, scroll);
   } catch (e) {
     $('error').textContent = e instanceof Error ? e.message : String(e);
     $('error').style.display = 'block';
@@ -846,8 +794,11 @@ function renderStylePicker(currentId: string, _target: string, _mode: Mode): str
   const chips = STYLE_LIST.map((s, i) => {
     const active = s.id === currentId || (currentId === 'default' && s.id === 'default');
     const label = s.id === 'default' ? 'Dashboard' : s.name;
-    const num = i === 0 ? '0' : String(i);
-    return `<button class="dp-chip${active ? ' is-active' : ''}" data-style="${s.id}" type="button" title="${escapeXml(s.blurb)} (press ${num})"><span class="dp-num">${num}</span>${escapeXml(label)}</button>`;
+    // Keyboard shortcut hints: only 0-9 are reachable via single keys; the
+    // 11th chip (subway) gets ←/→ as its hint instead of a misleading "10".
+    const shortcut = i < 10 ? `press ${i}` : 'press ← or →';
+    const numLabel = i < 10 ? String(i) : '·';
+    return `<button class="dp-chip${active ? ' is-active' : ''}" data-style="${s.id}" type="button" title="${escapeXml(s.blurb)} (${shortcut})"><span class="dp-num">${numLabel}</span>${escapeXml(label)}</button>`;
   }).join('');
   return `<style>
 .dp-rail{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;gap:6px;align-items:center;background:rgba(8,10,16,.88);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.14);padding:6px 8px;border-radius:999px;font-family:Inter,ui-sans-serif,system-ui;font-size:11px;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.5);max-width:calc(100vw - 32px);overflow-x:auto;scrollbar-width:none}
@@ -928,7 +879,17 @@ function unmountAnyStyle(): void {
     if (c.startsWith('style-') || c === 'style-takeover') document.body.classList.remove(c);
   }
   const host = document.getElementById('styleHost');
-  if (host) host.innerHTML = '';
+  if (host) {
+    host.innerHTML = '';
+    host.style.opacity = '';
+    host.style.transition = '';
+  }
+  // The wrap is hidden purely via CSS (`body.style-takeover .wrap`) when a
+  // takeover is active; once we've cleared that class the wrap reappears
+  // automatically. Wipe any stale inline display:none from older builds so
+  // a fresh deploy hitting an old SPA doesn't leave a hidden chrome.
+  const wrap = document.querySelector<HTMLElement>('.wrap');
+  if (wrap && wrap.style.display === 'none') wrap.style.display = '';
 }
 
 /**
@@ -937,26 +898,34 @@ function unmountAnyStyle(): void {
  * applies a brief opacity fade so the swap doesn't flash.
  */
 function mountStyle(renderer: import('./styles/index.ts').StyleRenderer, data: ProfileData): void {
-  unmountAnyStyle();
-  const wrap = document.querySelector<HTMLElement>('.wrap');
-  if (wrap) wrap.style.display = 'none';
+  // Tear down the *previous* renderer's listeners before swapping markup.
+  if (lastStyleUnmount) { try { lastStyleUnmount(); } catch { /* ignore */ } lastStyleUnmount = null; }
+
+  // Atomic swap, no opacity dance: each style's CSS rules are inline with its
+  // HTML, so as long as the body class and innerHTML are replaced in the same
+  // tick the user never sees an in-between "naked" frame. The previous fade
+  // briefly showed the empty body background between styles — that was the
+  // "flash on style switch" the user kept reporting.
+  const styleClasses = Array.from(document.body.classList).filter((c) => c.startsWith('style-') && c !== 'style-takeover');
+  for (const c of styleClasses) document.body.classList.remove(c);
   document.body.classList.add('style-takeover', `style-${renderer.id}`);
+
   let host = document.getElementById('styleHost');
   if (!host) {
     host = document.createElement('div');
     host.id = 'styleHost';
     document.body.appendChild(host);
   }
-  // Quick fade-in so the swap reads as a transition, not a snap.
-  host.style.opacity = '0';
-  host.style.transition = 'opacity .22s ease-out';
+  // Wipe any stale inline opacity / transition leftovers from the older
+  // version of this code so a freshly-deployed bundle hitting a cached host
+  // doesn't keep the host invisible.
+  host.style.opacity = '';
+  host.style.transition = '';
   const out = renderer.render(data);
   host.innerHTML = out.html + renderStylePicker(renderer.id, lastTarget || data.target, currentMode);
   const ret = out.mount?.(host);
   lastStyleUnmount = typeof ret === 'function' ? ret : null;
   wireStylePicker(host, lastTarget || data.target, currentMode);
-  // next frame so the browser commits opacity:0 before transitioning to 1.
-  requestAnimationFrame(() => requestAnimationFrame(() => { host!.style.opacity = '1'; }));
 }
 
 /**
@@ -970,8 +939,7 @@ function applyStyle(id: string, target: string, mode: Mode): void {
   history.replaceState(null, '', newUrl);
 
   if (!lastProfileData) {
-    // Cold start (e.g. user landed via picker postMessage from elsewhere) —
-    // fall back to a normal build, which will re-fetch and re-render.
+    // Cold start (no cached data yet) — fall back to a normal fetching build.
     build(target, false);
     return;
   }
@@ -982,20 +950,73 @@ function applyStyle(id: string, target: string, mode: Mode): void {
     return;
   }
 
-  // Switch to the default dashboard view. Fade the styleHost out, then
-  // unmount and bring the .wrap chrome back. We don't have a "re-render
-  // dashboard from cached data" helper today, so re-run build() — it skips
-  // a real network round-trip when the GitHub fetch is cached client-side.
-  const host = document.getElementById('styleHost');
-  if (host) {
-    host.style.transition = 'opacity .18s ease-out';
-    host.style.opacity = '0';
+  // Switch back to the default dashboard view. If we've already rendered the
+  // dashboard once for this target it's still in the DOM under #result —
+  // just unmount the takeover and the dashboard reappears instantly. If
+  // it's never been rendered for this target, run the dashboard pipeline
+  // straight from cached data (no loader, no fetch).
+  unmountAnyStyle();
+  if (dashboardRenderedFor === target) return;
+  renderDashboard(target, lastProfileData, false);
+}
+
+/**
+ * Render the full default-view dashboard from a ProfileData object. Called
+ * once during the first build() for a given target, and re-callable directly
+ * by applyStyle when the user flips back to "default" without us having to
+ * re-fetch from GitHub.
+ */
+function renderDashboard(target: string, data: ProfileData, scroll: boolean): void {
+  const { profile, repo, isRepo, totalStars, archetype: arch, themes, repos, topLangs, langs, battle, insights, pack } = data;
+  const owner = target.split('/')[0];
+
+  // Body/wrap chrome restored, card panels filled in.
+  unmountAnyStyle();
+  const wrap = document.querySelector<HTMLElement>('.wrap');
+  if (wrap) wrap.style.display = '';
+
+  renderProfile(profile, repo, isRepo, totalStars, arch, themes, repos, topLangs);
+  renderBattleCard(battle, isRepo);
+  renderStrengths(topLangs);
+  renderThemes(themes);
+  renderRepos(repos, isRepo);
+  $('insightsCard').classList.toggle('hidden', isRepo);
+  if (!isRepo) renderInsights(profile, repos, totalStars);
+
+  $('agentPack').textContent = pack;
+
+  renderStack(insights, isRepo, owner);
+  renderCommitStyle(insights, isRepo);
+  renderHeatmap(insights);
+  renderRelated(insights, isRepo);
+  if (isRepo) {
+    $('userActivityRow').classList.add('hidden');
+  } else {
+    $('userActivityRow').classList.remove('hidden');
+    renderActivity(insights);
+    renderHealth(repos);
   }
-  setTimeout(() => {
-    unmountAnyStyle();
-    document.querySelector<HTMLElement>('.wrap')!.style.display = '';
-    build(target, false);
-  }, 180);
+
+  const agent = currentMode === 'agent';
+  $('graph').classList.toggle('hidden', agent);
+  $('agentPack').classList.toggle('hidden', !agent);
+  $('copyAgent').classList.toggle('hidden', !agent);
+  $('mainPanelTitle').textContent = agent ? 'Agent context pack' : 'Builder graph';
+  if (!agent) renderGraph(topLangs, themes, arch);
+  $('result').classList.add('show');
+  document.body.classList.add('has-result');
+
+  // Floating style-picker chip rail.
+  const existingPicker = document.getElementById('dpStylePicker');
+  if (existingPicker) existingPicker.remove();
+  const pickerHost = document.createElement('div');
+  pickerHost.id = 'dpStylePickerHost';
+  pickerHost.innerHTML = renderStylePicker('default', target, currentMode);
+  while (pickerHost.firstChild) document.body.appendChild(pickerHost.firstChild);
+  wireStylePicker(document, target, currentMode);
+  if (scroll) $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  dashboardRenderedFor = target;
 }
 
 // ── stack / commit-style / heatmap renderers (data from /target.json sidecar) ──
