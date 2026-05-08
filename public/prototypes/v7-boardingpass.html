@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>v7 — Dev Pass · Devprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,ui-sans-serif,system-ui;background:#0c1018;color:#fff;min-height:100vh;padding:32px 18px;display:flex;flex-direction:column;align-items:center}
+    body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at top,rgba(60,80,160,.2),transparent 50%);z-index:-1}
+    .nav{display:flex;justify-content:space-between;width:100%;max-width:880px;margin-bottom:24px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#888}
+    .nav a{color:#3aa9ff;text-decoration:none}
+    /* THE PASS */
+    .pass{width:100%;max-width:880px;display:flex;background:#fff;color:#111;border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.1);position:relative;min-height:280px}
+    /* Stub on the right (tear-off) */
+    .stub{width:230px;background:#0a4a6e;color:#fff;flex-shrink:0;position:relative;padding:18px;display:flex;flex-direction:column}
+    .stub::before{content:"";position:absolute;left:0;top:0;bottom:0;width:0;border-left:2px dashed rgba(255,255,255,.5);background-image:radial-gradient(circle at left center,#0c1018 0,#0c1018 5px,transparent 6px);background-size:14px 14px;background-repeat:repeat-y}
+    .stub-tab{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);writing-mode:vertical-lr;transform:rotate(180deg);position:absolute;left:8px;top:50%;transform:rotate(180deg) translateY(50%);font-weight:700}
+    .stub-content{padding-left:14px;flex:1;display:flex;flex-direction:column;justify-content:space-between}
+    .stub-row{margin-bottom:14px}
+    .stub-row .lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px}
+    .stub-row .val{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.04em;line-height:1}
+    .stub-row .sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.55);margin-top:2px;letter-spacing:.05em}
+    .barcode{display:flex;align-items:flex-end;height:40px;gap:1px;margin-top:10px;background:#fff;padding:6px 8px;border-radius:3px}
+    .barcode i{display:block;background:#0a4a6e;width:2px;height:100%}
+    .barcode i:nth-child(2n){width:1px;height:80%}
+    .barcode i:nth-child(3n){height:60%}
+    .barcode i:nth-child(7n){width:3px}
+    /* Main pass body */
+    .body{flex:1;padding:0}
+    .head{padding:18px 24px 14px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
+    .head .brand{display:flex;align-items:center;gap:10px;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.06em;color:#0a4a6e}
+    .head .brand::before{content:"";display:block;width:24px;height:24px;background:#0a4a6e;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+    .head .pass-type{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#666;text-align:right;line-height:1.4}
+    .head .pass-type strong{color:#111;display:block;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em;line-height:1.2}
+    .head .pass-type .stamp{display:inline-block;background:#a02828;color:#fff;padding:3px 8px;border-radius:3px;font-weight:700;letter-spacing:.12em;margin-top:4px;font-size:9px}
+    /* Passenger / dev row */
+    .dev-row{padding:18px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;border-bottom:1px solid #ddd}
+    .avatar{width:64px;height:64px;border-radius:8px;border:2px solid #0a4a6e;object-fit:cover}
+    .name-block .lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#666}
+    .name-block h2{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:.03em;line-height:.95;color:#111;margin-top:2px}
+    .name-block .meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:#666;margin-top:6px}
+    .archetype{text-align:right}
+    .archetype .lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#666}
+    .archetype .val{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.02em;color:#0a4a6e;line-height:.95}
+    .archetype .tier{display:inline-block;background:linear-gradient(135deg,#ffb000,#ff7e3a);color:#1a0a00;padding:3px 8px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.12em;margin-top:6px}
+    /* Itinerary table */
+    .itinerary{padding:18px 24px;display:grid;grid-template-columns:repeat(6,1fr);gap:18px;border-bottom:1px solid #ddd}
+    .itinerary .item .lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#666;margin-bottom:4px}
+    .itinerary .item .val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#111;line-height:1;letter-spacing:.02em}
+    .itinerary .item .sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:#666;margin-top:3px}
+    /* Top destinations */
+    .destinations{padding:18px 24px;border-bottom:1px solid #ddd}
+    .destinations h3{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#666;margin-bottom:10px;display:flex;justify-content:space-between}
+    .destinations h3 b{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.05em;color:#111;font-weight:400}
+    .dest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid #ddd}
+    .dest{padding:10px 12px;border-right:1px solid #eee;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.4}
+    .dest:nth-child(3n){border-right:0}
+    .dest:nth-child(n+4){border-top:1px solid #eee}
+    .dest .name{font-family:Inter,sans-serif;font-weight:900;color:#0a4a6e;font-size:13px;letter-spacing:-.01em;display:block}
+    .dest .stars{color:#666;font-size:10px;margin-top:2px;display:block}
+    .dest .date{color:#999;font-size:9px;margin-top:1px;display:block}
+    /* Footer rules */
+    .rules{padding:14px 24px;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:#888;letter-spacing:.06em;line-height:1.45}
+    .rules strong{color:#0a4a6e;text-transform:uppercase;letter-spacing:.12em}
+    /* Description below */
+    .desc{margin-top:32px;text-align:center;color:#aaa;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;max-width:560px}
+    .desc strong{color:#3aa9ff;font-weight:700}
+    .cta{margin-top:20px;display:flex;gap:10px;justify-content:center}
+    .cta a{padding:14px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:#3aa9ff;color:#0c1018;text-decoration:none;border-radius:6px}
+    .cta a:hover{background:#fff}
+    .cta a.outline{background:transparent;color:#3aa9ff;outline:1px solid #3aa9ff}
+    /* Subtle noise on white */
+    .pass::after{content:"";position:absolute;inset:0;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><circle cx='30' cy='30' r='.5' fill='%23000' opacity='.04'/></svg>") repeat;background-size:6px 6px;pointer-events:none}
+    @media(max-width:740px){.pass{flex-direction:column}.stub{width:auto}.stub::before{left:0;right:0;width:auto;height:0;border-top:2px dashed rgba(255,255,255,.5);border-left:0;background-image:radial-gradient(circle at top center,#0c1018 0,#0c1018 5px,transparent 6px);background-size:14px 14px;background-repeat:repeat-x}.itinerary{grid-template-columns:repeat(3,1fr)}.dest-grid{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <span>v7 · DEV PASS · 7/7</span>
+    <a href="/prototypes/">← back to gallery</a>
+  </div>
+
+  <article class="pass">
+    <div class="body">
+      <header class="head">
+        <span class="brand">DEVPRINT AIR</span>
+        <span class="pass-type">Boarding Pass — Dev Class<strong>OPEN-SOURCE</strong><span class="stamp">★ FIRST</span></span>
+      </header>
+
+      <div class="dev-row">
+        <img class="avatar" src="https://avatars.githubusercontent.com/u/170270?v=4" alt="" />
+        <div class="name-block">
+          <div class="lbl">Passenger Name</div>
+          <h2>SORHUS / SINDRE</h2>
+          <div class="meta">@sindresorhus · stockholm · 23 yr active · public ID #170270</div>
+        </div>
+        <div class="archetype">
+          <div class="lbl">Archetype</div>
+          <div class="val">TOOLS<br>MAKER</div>
+          <span class="tier">★ LEGENDARY</span>
+        </div>
+      </div>
+
+      <div class="itinerary">
+        <div class="item"><div class="lbl">From</div><div class="val">2003</div><div class="sub">first commit</div></div>
+        <div class="item"><div class="lbl">To</div><div class="val">2026</div><div class="sub">last push · today</div></div>
+        <div class="item"><div class="lbl">Flight</div><div class="val">DP1134</div><div class="sub">repos shipped</div></div>
+        <div class="item"><div class="lbl">Class</div><div class="val">JS</div><div class="sub">+ TS · Swift · Shell</div></div>
+        <div class="item"><div class="lbl">Gate</div><div class="val">★56</div><div class="sub">JS dominance</div></div>
+        <div class="item"><div class="lbl">Seat</div><div class="val">99A</div><div class="sub">build · impact · community</div></div>
+      </div>
+
+      <div class="destinations">
+        <h3><b>Top destinations</b><span>by stars · click to board</span></h3>
+        <div class="dest-grid">
+          <a class="dest" href="https://github.com/sindresorhus/awesome"><span class="name">awesome</span><span class="stars">★ 463,911 · the seminal list</span><span class="date">last push: today</span></a>
+          <a class="dest" href="https://github.com/sindresorhus/awesome-nodejs"><span class="name">awesome-nodejs</span><span class="stars">★ 65,626 · node.js packages</span><span class="date">last push: today</span></a>
+          <a class="dest" href="https://github.com/sindresorhus/awesome-electron"><span class="name">awesome-electron</span><span class="stars">★ 27,138 · electron resources</span><span class="date">last push: 07 May</span></a>
+          <a class="dest" href="https://github.com/sindresorhus/quick-look-plugins"><span class="name">quick-look-plugins</span><span class="stars">★ 18,632 · macOS quick look</span><span class="date">last push: today</span></a>
+          <a class="dest" href="https://github.com/sindresorhus/type-fest"><span class="name">type-fest</span><span class="stars">★ 17,123 · TS essentials</span><span class="date">last push: today</span></a>
+          <a class="dest" href="https://github.com/sindresorhus/ky"><span class="name">ky</span><span class="stars">★ 16,829 · tiny http client</span><span class="date">last push: today</span></a>
+        </div>
+      </div>
+
+      <div class="rules">
+        <strong>Boarding info ·</strong> the holder of this pass has shipped 1,134 public repositories totalling 842,530 stars over 23 years. Carry-on includes <strong>56 JavaScript</strong>, <strong>13 TypeScript</strong>, and <strong>11 Swift</strong> projects. Frequent collaborators: <strong>@lpinca, @gaearon, @kevva, @SamVerschueren</strong> +70 more. <strong>Pass status ·</strong> live · regenerated on every push · public data only.
+      </div>
+    </div>
+
+    <aside class="stub">
+      <span class="stub-tab">Devprint Air · Boarding Stub</span>
+      <div class="stub-content">
+        <div class="stub-row"><div class="lbl">Passenger</div><div class="val">SORHUS</div><div class="sub">SINDRE</div></div>
+        <div class="stub-row"><div class="lbl">Route</div><div class="val">2003 → 2026</div><div class="sub">23 years public</div></div>
+        <div class="stub-row"><div class="lbl">Tier</div><div class="val">LEGENDARY</div><div class="sub">★ 99 / 99 / 99</div></div>
+        <div>
+          <div class="lbl" style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:4px">Boarding Code</div>
+          <div class="barcode">
+            <i></i><i></i><i style="height:100%"></i><i></i><i style="height:60%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:80%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:100%"></i><i></i><i style="height:60%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:80%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:60%"></i><i></i><i style="height:100%"></i><i></i>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.7);margin-top:6px;letter-spacing:.06em">DP1134-SS-026</div>
+        </div>
+      </div>
+    </aside>
+  </article>
+
+  <p class="desc">Devprint as a <strong>boarding pass</strong>. From-year is the dev's first commit, to-year is now, the flight code is the repo count, the gate is their dominant language, and the seat encodes their battle stats. The stub at the right tears off perfectly — print it, sign it, hand it over.<br><strong>The viral move:</strong> "I just got bumped to first class" with a screenshot. Works equally well as a printed CV companion.</p>
+
+  <div class="cta">
+    <a href="#">↗ Tweet pass</a>
+    <a class="outline" href="#">Print stub</a>
+  </div>
+</body>
+</html>

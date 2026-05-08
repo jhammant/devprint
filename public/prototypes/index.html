@@ -32,6 +32,33 @@
     .tag-1{background:#ffd166;color:#000}
     .tag-2{background:#111;color:#f5f1e8}
     .tag-3{background:#00f0ff;color:#000}
+    .tag-4{background:linear-gradient(135deg,#ffd166,#ff5cc8,#00f0ff);color:#000}
+    .tag-5{background:#ff3030;color:#fff}
+    .tag-6{background:#a02828;color:#f4ead0;font-family:'Times New Roman',serif;font-style:italic}
+    .tag-7{background:#3aa9ff;color:#0c1018}
+    /* V4 holofoil preview */
+    .preview-4{background:linear-gradient(160deg,#1a0030 0%,#3a0a55 50%,#0a0530 100%);position:relative;overflow:hidden}
+    .preview-4::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 200px 300px at 30% 40%,rgba(255,0,200,.5),rgba(255,200,0,.4) 25%,rgba(0,255,255,.3) 50%,transparent 70%);mix-blend-mode:color-dodge;animation:foilshift 5s ease-in-out infinite alternate}
+    .preview-4::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0px,rgba(255,255,255,.06) 2px,transparent 2px,transparent 5px);mix-blend-mode:overlay}
+    @keyframes foilshift{from{transform:translate(-30%,-10%)}to{transform:translate(40%,20%)}}
+    .preview-4 span{position:relative;z-index:2;font-family:'Press Start 2P',monospace;font-size:24px;letter-spacing:.05em;color:#ffd166;text-shadow:0 0 18px currentColor}
+    /* V5 magazine preview */
+    .preview-5{background:linear-gradient(180deg,#fff5e0,#f0e0c0);color:#111;position:relative;flex-direction:column;gap:6px;font-family:Inter,sans-serif}
+    .preview-5::before{content:"DEVPRINT";position:absolute;top:14px;left:14px;right:14px;font-family:'Bebas Neue','Inter',sans-serif;font-size:38px;letter-spacing:-.02em;color:#111;line-height:1;border-bottom:3px solid #111;padding-bottom:6px}
+    .preview-5 span{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:.02em;color:#ff3030;line-height:1;text-shadow:none;margin-top:46px}
+    .preview-5::after{content:"ISSUE 09 · MAY 2026";position:absolute;bottom:14px;left:14px;right:14px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9px;letter-spacing:.18em;color:#666;text-align:left}
+    /* V6 newspaper preview */
+    .preview-6{background:#f4ead0;color:#111;position:relative;flex-direction:column;font-family:'Times New Roman',Georgia,serif}
+    .preview-6::before{content:"The Devprint Times";position:absolute;top:14px;left:14px;right:14px;font-family:'Times New Roman',Georgia,serif;font-style:italic;font-weight:900;font-size:30px;letter-spacing:-.01em;color:#111;line-height:1;text-align:center;border-bottom:3px double #111;padding-bottom:6px}
+    .preview-6 span{font-family:'Times New Roman',Georgia,serif;font-style:italic;font-size:30px;font-weight:900;letter-spacing:-.01em;color:#a02828;text-shadow:none;margin-top:36px}
+    .preview-6::after{content:"Vol. CXXXIV · No. 1,134 · 8 May, 2026";position:absolute;bottom:14px;left:14px;right:14px;font-family:Inter,sans-serif;font-size:9px;letter-spacing:.16em;color:#666;text-align:center;text-transform:uppercase}
+    /* V7 boarding pass preview */
+    .preview-7{background:#fff;color:#111;display:flex;flex-direction:row;padding:0;overflow:hidden}
+    .preview-7-main{flex:1;background:#fff;color:#111;padding:14px;display:flex;flex-direction:column;justify-content:space-between;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;font-size:18px;line-height:1}
+    .preview-7-main em{font-family:'JetBrains Mono',monospace;font-size:9px;color:#666;letter-spacing:.18em;text-transform:uppercase;font-style:normal}
+    .preview-7-stub{width:64px;background:#0a4a6e;color:#fff;padding:14px 8px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;border-left:2px dashed rgba(255,255,255,.5);font-family:'Bebas Neue',sans-serif;text-align:center;letter-spacing:.06em;font-size:14px;line-height:1.1;background-image:radial-gradient(circle at left center,#fff 0,#fff 4px,transparent 5px);background-size:12px 12px;background-repeat:repeat-y;background-position:left center}
+    .preview-7-stub small{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.16em;color:rgba(255,255,255,.7)}
+    .preview-7 span{display:none}
     .footer{color:#666;font-size:13px;line-height:1.6;border-top:1px solid #222;padding-top:24px;font-family:Inter,ui-sans-serif,system-ui}
     .footer a{color:#fff}
   </style>
@@ -39,13 +66,15 @@
 <body>
   <div class="wrap">
     <h1>Style overhaul prototypes</h1>
-    <p class="lead">Three takes on what Devprint could look like as a sharable virtual CV. Each is a static mockup wired with sample data for sindresorhus so you can flip between them and decide a direction. Click any card.</p>
+    <p class="lead">Seven takes on what Devprint could look like as a sharable virtual CV. Each is a static mockup wired with the same sindresorhus sample data so the visual direction is the only variable. Pick favourites; tell me what to mash up. <strong style="color:#ffd166">Round 2 (v4–v7) goes deeper on what you flagged in round 1.</strong></p>
+
+    <div style="font-family:Inter,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:#666;margin-bottom:14px">★ Round 1 — opening directions</div>
     <div class="grid">
       <a class="card" href="./v1-arcade.html">
         <div class="preview preview-1"><span>EPIC</span></div>
         <div class="body">
           <div class="name">v1 — Trading Card</div>
-          <div class="desc">Top-Trumps × Pokémon: a literal collectable card. Pure black, neon palette, scan-line, big tier badge, isometric repo blocks. Optimised for screenshotting and tweeting "I rolled a Legendary."</div>
+          <div class="desc">Top-Trumps × Pokémon: a literal collectable card. Pure black, neon palette, scan-line, big tier badge, isometric repo blocks.</div>
           <span class="tag tag-1">share-as-flex</span>
         </div>
       </a>
@@ -53,7 +82,7 @@
         <div class="preview preview-2"><span>Sindre</span> Sorhus</div>
         <div class="body">
           <div class="name">v2 — Letterhead</div>
-          <div class="desc">Reads like a printed CV. Off-white paper, slab-serif heading, a single red accent, double-rule divider. Lifeless sci-fi gradients deleted. Optimised for sharing with a hiring manager who would close a glass panel on sight.</div>
+          <div class="desc">Reads like a printed CV. Off-white paper, slab-serif heading, single red accent, double-rule dividers. For hiring managers.</div>
           <span class="tag tag-2">share-as-CV</span>
         </div>
       </a>
@@ -61,16 +90,65 @@
         <div class="preview preview-3"><span>HOLO</span></div>
         <div class="body">
           <div class="name">v3 — Holo Profile</div>
-          <div class="desc">Real CSS 3D perspective: the battle card tilts to your mouse, the builder graph is a galactic disk, the repo grid is an isometric tower of glowing blocks. Optimised for "wait what is that, send the link".</div>
+          <div class="desc">Real CSS 3D: profile card tilts to your mouse, builder graph is a rotating galactic disk, repos are an isometric glowing tower.</div>
           <span class="tag tag-3">share-as-vibe</span>
         </div>
       </a>
     </div>
+
+    <div style="font-family:Inter,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:#666;margin:32px 0 14px">★ Round 2 — push-further directions</div>
+    <div class="grid">
+      <a class="card" href="./v4-holofoil.html">
+        <div class="preview preview-4"><span>FOIL</span></div>
+        <div class="body">
+          <div class="name">v4 — Holofoil Card</div>
+          <div class="desc">v1 trading card with a real holographic foil sheen that <em>tracks your mouse</em>. Card tilts, rainbow rolls across the art. Closest thing to opening a Charizard.</div>
+          <span class="tag tag-4">share-as-grail</span>
+        </div>
+      </a>
+      <a class="card" href="./v5-magazine.html">
+        <div class="preview preview-5"><span>COVER</span></div>
+        <div class="body">
+          <div class="name">v5 — Magazine Cover</div>
+          <div class="desc">Devprint as the cover of a glossy. Big bold cover lines auto-generate from your stats. Tweet "I'm on the cover" with a screenshot.</div>
+          <span class="tag tag-5">share-as-news</span>
+        </div>
+      </a>
+      <a class="card" href="./v6-newspaper.html">
+        <div class="preview preview-6"><span>TIMES</span></div>
+        <div class="body">
+          <div class="name">v6 — The Devprint Times</div>
+          <div class="desc">A real newspaper front page. Masthead, three-column body, drop-caps, a press stamp, by-the-numbers sidebar, classifieds, top-releases listings. v2 turned up to 11.</div>
+          <span class="tag tag-6">share-as-broadside</span>
+        </div>
+      </a>
+      <a class="card" href="./v7-boardingpass.html">
+        <div class="preview preview-7">
+          <div class="preview-7-main">
+            <span style="display:block"><em>Passenger</em><br>SORHUS / SINDRE</span>
+            <span style="display:block"><em>Flight</em> DP1134 · <em>Class</em> JS</span>
+          </div>
+          <div class="preview-7-stub">DP<small>1134</small></div>
+        </div>
+        <div class="body">
+          <div class="name">v7 — Dev Pass</div>
+          <div class="desc">A literal boarding pass with a tear-off stub. From-year is your first commit, flight code is your repo count, gate is your dominant language, seat is your battle stats. Prints flawlessly.</div>
+          <span class="tag tag-7">share-as-ticket</span>
+        </div>
+      </a>
+    </div>
+
     <div class="footer">
-      All three include the same "virtual CV" shape: avatar + tagline + battle card + a "currently building" line + skill bars + repo highlights + a clear share/embed CTA. The visual language differs.
+      All seven carry the same virtual-CV scaffolding (avatar, tagline, "open to opportunities" pill, battle stats with formulas exposed, repo highlights, share CTAs, live-data colophon). The visual language is what changes.
       <br><br>
-      Pick a direction (or tell me what to mash up) and I'll roll it into the live SPA.
-      <br><br>
+      <strong style="color:#ffd166">Mash-up moves I can ship in one round:</strong>
+      <ul style="margin:10px 0 0 22px;line-height:1.8">
+        <li>v4 holofoil + v6 newspaper sidebar — viral card with serious-receipt panel below it</li>
+        <li>v5 magazine + v7 boarding pass — issue-cover with a tear-off contact pass</li>
+        <li>v2 letterhead + v4 mouse-tilt — print-CV that subtly tilts when you hover</li>
+        <li>v6 newspaper + v3 builder galaxy — front-page with a 3D rotating disk in the masthead</li>
+      </ul>
+      <br>
       Live site: <a href="/">devprint.dev</a> · <a href="https://github.com/jhammant/devprint">source</a>
     </div>
   </div>

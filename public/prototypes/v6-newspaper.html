@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>v6 — The Devprint Times · Devprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Old+Standard+TT:wght@400;700&family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;700&family=Special+Elite&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Old Standard TT',Georgia,serif;background:#1a1a1a;color:#111;min-height:100vh;padding:24px 18px;display:flex;flex-direction:column;align-items:center}
+    .nav{display:flex;justify-content:space-between;width:100%;max-width:980px;margin-bottom:24px;font-family:Inter,sans-serif;font-size:11px;color:#888}
+    .nav a{color:#a02828;text-decoration:none}
+    /* THE NEWSPAPER */
+    .news{width:100%;max-width:980px;background:#f4ead0;background-image:
+      radial-gradient(circle at 10% 80%,rgba(140,90,40,.12),transparent 40%),
+      radial-gradient(circle at 90% 30%,rgba(140,90,40,.10),transparent 40%);
+      box-shadow:0 30px 80px rgba(0,0,0,.6);padding:22px 28px;color:#111;position:relative}
+    .news::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='1' fill='%23000' opacity='0.04'/></svg>") repeat;background-size:6px 6px;pointer-events:none;mix-blend-mode:multiply}
+    /* Masthead */
+    .mast{text-align:center;border-bottom:6px double #111;padding-bottom:12px;margin-bottom:14px;position:relative}
+    .mast-top{display:flex;justify-content:space-between;align-items:center;font-family:Inter,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.18em;margin-bottom:8px;color:#444}
+    .mast-top .latin{font-family:'Old Standard TT',serif;font-style:italic;font-size:11px;letter-spacing:.04em;color:#666;text-transform:none}
+    .nameplate{font-family:'Playfair Display',serif;font-weight:900;font-size:96px;letter-spacing:-.02em;line-height:.92;font-style:italic}
+    .mast-tagline{font-family:'Old Standard TT',serif;font-style:italic;font-size:14px;color:#444;margin-top:6px}
+    .mast-bottom{display:flex;justify-content:space-between;align-items:center;font-family:Inter,sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-top:10px;padding-top:8px;border-top:1px solid #888}
+    .mast-bottom strong{color:#a02828}
+    /* Top headline */
+    .deck{text-align:center;margin:18px 0 14px;border-bottom:1px solid #222;padding-bottom:12px}
+    .deck-kicker{font-family:Inter,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.24em;color:#a02828;font-weight:700;margin-bottom:8px}
+    .deck h1{font-family:'Playfair Display',serif;font-weight:900;font-size:56px;line-height:.95;letter-spacing:-.025em;margin-bottom:8px}
+    .deck h2{font-family:'Playfair Display',serif;font-weight:400;font-style:italic;font-size:22px;color:#444;line-height:1.3;max-width:36em;margin:0 auto 4px}
+    .deck-byline{font-family:Inter,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:#666;margin-top:6px}
+    /* Main body — multi column */
+    .body-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:20px;border-bottom:1px solid #222;padding-bottom:18px;margin-bottom:14px}
+    .lead-art{margin-bottom:10px}
+    .lead-art img{width:100%;height:auto;display:block;filter:contrast(1.05) saturate(.6) sepia(.1)}
+    .lead-art .caption{font-family:Inter,sans-serif;font-size:9px;text-transform:uppercase;letter-spacing:.16em;color:#666;padding:4px 0;border-bottom:1px solid #888}
+    .col p{font-family:'Old Standard TT',serif;font-size:13.5px;line-height:1.55;text-align:justify;hyphens:auto;text-indent:1.4em;margin-bottom:6px}
+    .col p:first-of-type{text-indent:0}
+    .col p:first-of-type::first-letter{font-family:'Playfair Display',serif;font-weight:900;font-size:54px;float:left;line-height:.85;margin:6px 6px 0 0;color:#a02828}
+    .col p:first-of-type::first-line{font-family:Inter,sans-serif;font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
+    .col h3{font-family:'Playfair Display',serif;font-weight:900;font-size:18px;margin:8px 0 6px;line-height:1.1}
+    .col h3 + p{text-indent:0}
+    /* Stats box */
+    .stats-box{background:#111;color:#f4ead0;padding:14px;margin-bottom:10px}
+    .stats-box h4{font-family:Inter,sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#ffd166;margin-bottom:8px}
+    .stats-box .num{font-family:'Playfair Display',serif;font-weight:900;font-size:36px;line-height:1;font-style:italic}
+    .stats-box .num + .lbl{font-family:Inter,sans-serif;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#bbb;margin-top:4px}
+    .stats-box hr{border:0;border-top:1px solid #444;margin:10px 0}
+    .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-top:8px}
+    .stats-grid div{padding:4px 0}
+    .stats-grid b{font-family:'Playfair Display',serif;font-weight:900;font-size:18px;color:#ffd166;display:block;line-height:1}
+    .stats-grid span{font-family:Inter,sans-serif;font-size:8px;letter-spacing:.14em;color:#bbb;text-transform:uppercase}
+    /* Sidebar — classifieds */
+    .classifieds{background:rgba(0,0,0,.05);padding:12px 14px;border:1px solid #888}
+    .classifieds h4{font-family:'Playfair Display',serif;font-weight:900;font-size:14px;text-align:center;border-bottom:3px double #111;padding-bottom:4px;margin-bottom:8px;letter-spacing:-.01em}
+    .classified-item{font-family:'Old Standard TT',serif;font-size:11.5px;line-height:1.5;border-bottom:1px dotted #888;padding:6px 0}
+    .classified-item:last-child{border-bottom:0}
+    .classified-item b{font-weight:700}
+    /* Quote */
+    .pullquote{background:#a02828;color:#f4ead0;padding:14px 16px;font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:18px;line-height:1.3;margin:8px 0;text-align:center;font-variation-settings:"opsz" 18}
+    .pullquote::before{content:"";display:block;font-size:36px;font-family:'Playfair Display',serif;line-height:0;margin-bottom:14px}
+    .pullquote em{display:block;font-size:11px;font-style:normal;font-family:Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:rgba(244,234,208,.7);margin-top:8px;font-weight:700}
+    /* Bottom — listings */
+    .listings{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+    .listing{border-top:1px solid #222;padding-top:8px}
+    .listing .lk{font-family:Inter,sans-serif;font-size:9px;text-transform:uppercase;letter-spacing:.18em;color:#a02828;font-weight:700}
+    .listing h5{font-family:'Playfair Display',serif;font-weight:900;font-size:16px;letter-spacing:-.01em;line-height:1.1;margin:4px 0}
+    .listing p{font-family:'Old Standard TT',serif;font-size:11.5px;line-height:1.4;color:#444}
+    .listing .meta{font-family:Inter,sans-serif;font-size:9px;color:#777;margin-top:6px}
+    /* Footer */
+    .news-foot{margin-top:14px;padding-top:8px;border-top:6px double #111;display:flex;justify-content:space-between;font-family:Inter,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:#666}
+    /* Stamp */
+    .stamp{position:absolute;top:120px;right:24px;font-family:'Special Elite',monospace;color:#a02828;border:3px solid #a02828;padding:8px 12px;transform:rotate(-8deg);text-align:center;font-size:18px;line-height:1;opacity:.65;pointer-events:none}
+    .stamp small{display:block;font-size:9px;letter-spacing:.15em;margin-top:3px}
+    .desc{margin-top:32px;text-align:center;color:#aaa;font-family:Inter,sans-serif;font-size:13px;line-height:1.6;max-width:560px}
+    .desc strong{color:#a02828;font-weight:700}
+    .cta{margin-top:20px;display:flex;gap:10px;justify-content:center}
+    .cta a{padding:14px 22px;font-family:Inter,sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:#a02828;color:#fff;text-decoration:none}
+    .cta a.outline{background:transparent;color:#f4ead0;outline:1px solid #f4ead0}
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <span>v6 · NEWSPAPER · 6/7</span>
+    <a href="/prototypes/">← back to gallery</a>
+  </div>
+
+  <article class="news">
+    <header class="mast">
+      <div class="mast-top">
+        <span>Vol. CXXXIV · No. 1,134</span>
+        <span class="latin">Sine commit, nihil — nothing without commits</span>
+        <span>£1.20 · Free Online</span>
+      </div>
+      <h1 class="nameplate">The Devprint Times</h1>
+      <p class="mast-tagline">All the public commits that are fit to print.</p>
+      <div class="mast-bottom">
+        <span>Friday · 8 May, 2026</span>
+        <span><strong>Today's Edition:</strong> Sindre Sorhus</span>
+        <span>Open-Source Bureau · Stockholm</span>
+      </div>
+    </header>
+
+    <div class="deck">
+      <div class="deck-kicker">★ Profile of the Day ★</div>
+      <h1>"He's just shipping," sources say. <em style="font-style:italic">For 23 years.</em></h1>
+      <h2>Quiet maintainer of 1,134 npm staples now holds 842,530 stars across portfolio. Locals say "we use ky every day and didn't even know."</h2>
+      <div class="deck-byline">By Devprint Staff Reporter · 08 May 2026</div>
+    </div>
+
+    <div class="body-grid">
+      <div class="col">
+        <div class="lead-art">
+          <img src="https://avatars.githubusercontent.com/u/170270?v=4" alt="" />
+          <div class="caption">Above: Sorhus, photographed in his Stockholm office. (DEVPRINT)</div>
+        </div>
+        <p>STOCKHOLM — On a quiet Friday morning here, while most of the JavaScript world was still arguing about which framework to use, Sindre Sorhus pushed his 1,134th public repository. He did not announce it on social media. He did not blog about it. He simply pushed.</p>
+        <p>The repository in question is, by some accounts, "another small utility." Sorhus declined to elaborate. By the end of the working day, two of his other projects had been added to the dependency trees of an estimated 380,000 active codebases. None of these projects, taken individually, are large.</p>
+        <p>He shrugs. The shrug, captured by our photographer, has been described in some circles as "the Sorhus Shrug" — a subtle gesture that has come to define an entire generation of micro-libraries.</p>
+
+        <h3>The Stack: still JavaScript, still winning</h3>
+        <p>Of the maintainer's 100 most active repositories, 56% remain JavaScript-first; TypeScript adoption sits at a steady 13%. A surprising 11% Swift footprint hints at a parallel macOS practice that has produced quick-look-plugins, beloved by Apple developers.</p>
+      </div>
+
+      <div class="col">
+        <div class="stats-box">
+          <h4>By the numbers</h4>
+          <div class="num">1,134</div>
+          <div class="lbl">public repositories</div>
+          <hr>
+          <div class="num">842K</div>
+          <div class="lbl">stars across portfolio</div>
+          <hr>
+          <div class="num">79K</div>
+          <div class="lbl">followers worldwide</div>
+          <hr>
+          <div class="stats-grid">
+            <div><b>99</b><span>Build</span></div>
+            <div><b>99</b><span>Impact</span></div>
+            <div><b>99</b><span>Community</span></div>
+            <div><b>60</b><span>Versatility</span></div>
+            <div><b>51</b><span>Momentum</span></div>
+            <div><b>80</b><span>Originality</span></div>
+          </div>
+        </div>
+        <div class="pullquote">
+          The man with the largest collection of small things.
+          <em>— a recent observer</em>
+        </div>
+        <p style="font-family:'Old Standard TT',serif;font-size:13px;line-height:1.5">Last push: today. Last 12 months: <b>100% of repos updated</b>. The peak month, May 2026, alone produced an <b>extraordinary 100 simultaneous updates</b> — believed to be a coordinated dependency-bump campaign.</p>
+      </div>
+
+      <div class="col">
+        <div class="classifieds">
+          <h4>★ Career Listings ★</h4>
+          <div class="classified-item"><b>OPEN TO OPPORTUNITIES.</b> Stockholm-based maintainer of 1,134 npm packages seeks ad-hoc consulting on TS architecture, library design, OSS process. References: 79,088 followers. <em>Contact via the GitHub address.</em></div>
+          <div class="classified-item"><b>NPM HALL OF FAME — INDUCTION.</b> Class of 2026, presented by The Devprint Times. Honourable mention.</div>
+          <div class="classified-item"><b>WANTED.</b> Eight collaborators across the portfolio. <i>@lpinca, @gaearon, @kevva, @SamVerschueren, @kdeldycke, @arthurvr, @poteto, @jimfb</i> — please apply within.</div>
+        </div>
+
+        <div style="margin-top:14px;padding-top:8px;border-top:1px solid #888">
+          <h3 style="font-family:'Playfair Display',serif;font-weight:900;font-size:18px;margin-bottom:6px">The Style Section</h3>
+          <p style="font-family:'Old Standard TT',serif;font-size:12px;line-height:1.5">A reading of the maintainer's commit prose suggests "<em>fix(types): improve inference for nested objects</em>" as the dominant register. <b>Conventional Commits</b> remain the favoured house style, and squash-merges with <code style="font-family:'Special Elite',monospace;font-size:11px;background:#fff;padding:1px 4px">(#NNN)</code> trailers are reported in 97% of recent activity.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif;font-weight:900;font-size:24px;letter-spacing:-.01em;margin:6px 0;border-bottom:1px solid #222;padding-bottom:6px">★ Top Releases &amp; What People Are Reading</h3>
+
+    <div class="listings">
+      <div class="listing"><div class="lk">№. 1 · Best-Seller</div><h5>awesome</h5><p>The seminal awesome list. Reviewed in this paper four issues running.</p><div class="meta">★ 463,911 · today</div></div>
+      <div class="listing"><div class="lk">№. 2</div><h5>awesome-nodejs</h5><p>"Delightful Node.js packages and resources." Submissions paused, supply tight.</p><div class="meta">★ 65,626 · today</div></div>
+      <div class="listing"><div class="lk">№. 3 · Editor's Pick</div><h5>type-fest</h5><p>Essential TypeScript types. The dependency you've installed and forgotten.</p><div class="meta">★ 17,123 · today</div></div>
+      <div class="listing"><div class="lk">№. 4</div><h5>ky</h5><p>Tiny &amp; elegant HTTP client based on Fetch API. Now bundled in 12,000+ projects.</p><div class="meta">★ 16,829 · today</div></div>
+    </div>
+
+    <footer class="news-foot">
+      <span>devprint.dev/sindresorhus · subscribe with your username</span>
+      <span>printed live · public data only · synced 08 May 2026</span>
+    </footer>
+
+    <div class="stamp">PRESS<br>COPY<small>· 08 MAY 26 ·</small></div>
+  </article>
+
+  <p class="desc">Devprint as <strong>your dev's front page</strong>. Auto-typeset newspaper layout where headline, byline, leading paragraph, by-the-numbers sidebar, classifieds, and listings all generate from the same data. The viral move: <strong>tweet "I made the front page"</strong> with a screenshot, then click into a hiring conversation.</p>
+
+  <div class="cta">
+    <a href="#">↗ Front page on X</a>
+    <a class="outline" href="#" style="color:#a02828;outline-color:#a02828">Subscribe</a>
+  </div>
+</body>
+</html>

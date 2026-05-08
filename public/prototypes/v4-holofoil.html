@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>v4 — Holofoil · Devprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;700;900&family=Bebas+Neue&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,ui-sans-serif,system-ui;background:#0a0210;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:32px 18px;perspective:2000px;overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:-30%;background:radial-gradient(ellipse at center,rgba(255,0,170,.15) 0%,rgba(0,240,255,.08) 30%,transparent 60%);animation:slowdrift 24s ease-in-out infinite alternate;z-index:-1}
+    @keyframes slowdrift{from{transform:translate(-2%,-2%) rotate(0deg)}to{transform:translate(2%,3%) rotate(8deg)}}
+    .nav{display:flex;justify-content:space-between;width:100%;max-width:560px;margin-bottom:32px;font-family:'Press Start 2P',monospace;font-size:9px;color:#888}
+    .nav a{color:#ff5cc8;text-decoration:none;text-shadow:0 0 8px currentColor}
+    /* THE CARD */
+    .holocard{position:relative;width:380px;height:560px;border-radius:24px;cursor:grab;transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateZ(0);transition:transform .08s ease-out;will-change:transform}
+    .holocard:active{cursor:grabbing}
+    /* The base art */
+    .base{position:absolute;inset:0;border-radius:24px;background:linear-gradient(160deg,#1a0030 0%,#3a0a55 30%,#5a004a 60%,#0a0530 100%);border:3px solid #ffd166;box-shadow:0 40px 80px -10px rgba(255,0,170,.4),0 0 0 1px rgba(255,255,255,.08),inset 0 0 60px rgba(255,209,102,.05);overflow:hidden}
+    .base::before{content:"";position:absolute;inset:6px;border:1px solid rgba(255,209,102,.35);border-radius:18px;pointer-events:none;z-index:5}
+    /* Holographic foil sheen — mouse tracked */
+    .foil{position:absolute;inset:0;border-radius:24px;mix-blend-mode:color-dodge;background:
+      radial-gradient(ellipse 350px 600px at var(--mx,50%) var(--my,50%),
+        rgba(255,0,200,.7) 0%,
+        rgba(255,200,0,.5) 18%,
+        rgba(0,255,255,.4) 36%,
+        rgba(180,0,255,.3) 54%,
+        transparent 75%);
+      filter:saturate(1.5) brightness(1.1);pointer-events:none;z-index:8;opacity:.95}
+    .foil-grain{position:absolute;inset:0;border-radius:24px;background:
+      repeating-linear-gradient(
+        var(--ang,115deg),
+        rgba(255,255,255,.08) 0px,
+        rgba(255,255,255,.08) 2px,
+        transparent 2px,
+        transparent 6px);
+      mix-blend-mode:overlay;pointer-events:none;z-index:9}
+    /* Card content */
+    .header{position:absolute;left:14px;right:14px;top:14px;display:flex;justify-content:space-between;align-items:flex-start;z-index:10}
+    .archetype{font-family:'Press Start 2P',monospace;font-size:9px;color:#ffd166;text-shadow:0 0 8px currentColor;letter-spacing:.05em;line-height:1.5}
+    .hp{font-family:'Bebas Neue',Inter,sans-serif;font-size:26px;color:#fff;letter-spacing:.05em;line-height:1;text-shadow:0 0 8px rgba(255,209,102,.8)}
+    .hp small{font-family:'Press Start 2P',monospace;font-size:9px;color:#ff5cc8;display:block;letter-spacing:.1em;margin-top:2px}
+    /* Avatar window */
+    .frame{position:absolute;left:24px;right:24px;top:62px;height:230px;border-radius:14px;overflow:hidden;border:3px solid #ffd166;box-shadow:0 0 24px rgba(255,209,102,.4),inset 0 0 20px rgba(0,0,0,.3);background:linear-gradient(135deg,#0a0530,#3a0a55);z-index:10}
+    .frame::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.4),transparent 60%);z-index:2;pointer-events:none}
+    .frame img{width:100%;height:100%;object-fit:cover;filter:saturate(1.1) contrast(1.05)}
+    .frame-corner{position:absolute;background:#ffd166;width:14px;height:14px;z-index:3}
+    .fc-tl{top:-2px;left:-2px;clip-path:polygon(0 0,100% 0,0 100%)}
+    .fc-tr{top:-2px;right:-2px;clip-path:polygon(0 0,100% 0,100% 100%)}
+    .fc-bl{bottom:-2px;left:-2px;clip-path:polygon(0 0,0 100%,100% 100%)}
+    .fc-br{bottom:-2px;right:-2px;clip-path:polygon(100% 0,100% 100%,0 100%)}
+    /* Name plate */
+    .nameplate{position:absolute;left:24px;right:24px;top:300px;height:60px;background:linear-gradient(90deg,rgba(0,0,0,.4),rgba(255,209,102,.2),rgba(0,0,0,.4));border-top:1px solid rgba(255,209,102,.5);border-bottom:1px solid rgba(255,209,102,.5);display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:10}
+    .name-text{font-family:Inter,sans-serif;font-weight:900;font-size:24px;letter-spacing:-.02em;line-height:1;text-shadow:0 0 12px rgba(255,209,102,.5)}
+    .name-text small{display:block;font-weight:400;font-size:11px;color:#ff5cc8;letter-spacing:.05em;margin-top:3px;text-shadow:0 0 6px currentColor}
+    .tier-stamp{font-family:'Bebas Neue',Inter,sans-serif;font-size:24px;color:#000;background:linear-gradient(135deg,#ffd166,#ff7e3a);padding:6px 10px;border-radius:6px;letter-spacing:.05em;line-height:1;box-shadow:0 4px 12px rgba(255,126,58,.6)}
+    /* Stats grid */
+    .moves{position:absolute;left:24px;right:24px;top:380px;z-index:10}
+    .move{display:flex;justify-content:space-between;align-items:baseline;padding:8px 12px;background:rgba(0,0,0,.4);border:1px solid rgba(255,209,102,.3);border-radius:8px;margin-bottom:5px;font-size:11px}
+    .move-name{color:#fff;text-transform:uppercase;letter-spacing:.1em;font-weight:700;font-size:9px}
+    .move-name small{display:block;color:#aaa;font-weight:400;font-size:9px;letter-spacing:0;text-transform:none;margin-top:2px;font-family:'JetBrains Mono',monospace}
+    .move-dmg{font-family:'Bebas Neue',Inter,sans-serif;font-size:22px;color:#ffd166;text-shadow:0 0 8px currentColor;letter-spacing:.05em;line-height:1}
+    /* Footer */
+    .cardfoot{position:absolute;left:14px;right:14px;bottom:14px;display:flex;justify-content:space-between;align-items:center;z-index:10}
+    .setno{font-family:'Press Start 2P',monospace;font-size:7px;color:#ffd166;text-shadow:0 0 6px currentColor}
+    .url{font-family:'JetBrains Mono',monospace;font-size:9px;color:#aaa}
+    .holosig{font-family:'Press Start 2P',monospace;font-size:7px;color:#ff5cc8;text-shadow:0 0 6px currentColor;letter-spacing:.1em}
+    /* Description below */
+    .desc{margin-top:32px;text-align:center;color:#999;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;max-width:480px}
+    .desc strong{color:#ffd166;font-weight:700}
+    .cta{margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .cta a{font-family:'Press Start 2P',monospace;font-size:10px;padding:12px 16px;background:#ffd166;color:#1a0a00;text-decoration:none;border-radius:6px;box-shadow:0 4px 0 #a17a00;letter-spacing:.05em;transition:transform .1s,box-shadow .1s}
+    .cta a:hover{transform:translateY(2px);box-shadow:0 2px 0 #a17a00}
+    .cta a.cyan{background:#00f0ff;box-shadow:0 4px 0 #007a85}
+    .cta a.cyan:hover{box-shadow:0 2px 0 #007a85}
+    .cta a.pink{background:#ff5cc8;box-shadow:0 4px 0 #88006c}
+  </style>
+</head>
+<body>
+  <div class="nav" style="max-width:560px;width:100%">
+    <span>v4 · HOLOFOIL · 4/7</span>
+    <a href="/prototypes/">← BACK TO GALLERY</a>
+  </div>
+
+  <article class="holocard" id="card">
+    <div class="base"></div>
+    <div class="foil-grain"></div>
+    <div class="foil"></div>
+
+    <header class="header">
+      <span class="archetype">▸ TOOLS<br>MAKER<br>· LV 99 ·</span>
+      <span class="hp">99/99<small>HP</small></span>
+    </header>
+
+    <div class="frame">
+      <span class="frame-corner fc-tl"></span>
+      <span class="frame-corner fc-tr"></span>
+      <span class="frame-corner fc-bl"></span>
+      <span class="frame-corner fc-br"></span>
+      <img src="https://avatars.githubusercontent.com/u/170270?v=4" alt="" />
+    </div>
+
+    <div class="nameplate">
+      <span class="name-text">Sindre Sorhus<small>@sindresorhus · 23 yr active</small></span>
+      <span class="tier-stamp">EPIC ★</span>
+    </div>
+
+    <div class="moves">
+      <div class="move"><span class="move-name">★ awesome <small>maintains the seminal awesome list</small></span><span class="move-dmg">463K</span></div>
+      <div class="move"><span class="move-name">⚡ type-fest <small>essential typescript types</small></span><span class="move-dmg">17K</span></div>
+      <div class="move"><span class="move-name">↯ ky <small>tiny http client based on fetch</small></span><span class="move-dmg">16K</span></div>
+      <div class="move"><span class="move-name">◈ portfolio <small>1,134 public repos · 79k followers</small></span><span class="move-dmg">842K</span></div>
+    </div>
+
+    <footer class="cardfoot">
+      <span class="setno">SET 26-1<br>· 042/1134 ·</span>
+      <span class="url">devprint.dev/sindresorhus</span>
+      <span class="holosig">★ HOLO ★<br>· FOIL ·</span>
+    </footer>
+  </article>
+
+  <p class="desc">Move your mouse over the card. The holographic foil tracks the cursor like a real Pokémon foil — the rainbow sheen rolls across the art and the angle tilts with you.<br><strong>Built to be screenshotted, GIF'd, and tweeted.</strong> The kind of share that has the next person clicking "what's mine?" within 30 seconds.</p>
+
+  <div class="cta">
+    <a href="#">↗ TWEET</a>
+    <a class="cyan" href="#">📋 COPY</a>
+    <a class="pink" href="#">📥 PDF</a>
+  </div>
+
+  <script>
+    // Mouse-tracked tilt + foil position
+    const card = document.getElementById('card');
+    const inner = (e) => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      // Tilt
+      const ry = (x - 0.5) * 28; // ±14
+      const rx = -(y - 0.5) * 22; // ±11 inverted
+      card.style.setProperty('--rx', rx + 'deg');
+      card.style.setProperty('--ry', ry + 'deg');
+      // Foil position
+      card.style.setProperty('--mx', x * 100 + '%');
+      card.style.setProperty('--my', y * 100 + '%');
+      // Grain angle shift for depth
+      card.style.setProperty('--ang', (115 + x * 30) + 'deg');
+    };
+    document.addEventListener('mousemove', inner);
+    // Touch support
+    document.addEventListener('touchmove', (e) => {
+      if (!e.touches[0]) return;
+      inner(e.touches[0]);
+    }, { passive: true });
+    // Reset on leave
+    document.addEventListener('mouseleave', () => {
+      card.style.setProperty('--rx', '0deg');
+      card.style.setProperty('--ry', '0deg');
+      card.style.setProperty('--mx', '50%');
+      card.style.setProperty('--my', '50%');
+    });
+  </script>
+</body>
+</html>

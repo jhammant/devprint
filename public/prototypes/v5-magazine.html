@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>v5 — Magazine Cover · Devprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,ui-sans-serif,system-ui;background:#1a1a1a;color:#111;min-height:100vh;padding:24px 18px;display:flex;flex-direction:column;align-items:center}
+    .nav{display:flex;justify-content:space-between;width:100%;max-width:760px;margin-bottom:24px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa}
+    .nav a{color:#ff3030;text-decoration:none;font-weight:700}
+    /* THE MAGAZINE COVER */
+    .cover{width:100%;max-width:760px;aspect-ratio:8.5/11;background:#fff5e0;background-image:
+      radial-gradient(circle at 30% 20%,rgba(255,180,180,.4),transparent 50%),
+      linear-gradient(180deg,#fff5e0,#f0e0c0);
+      box-shadow:0 30px 80px rgba(0,0,0,.7),0 0 0 1px rgba(0,0,0,.1);position:relative;overflow:hidden;color:#111}
+    /* Masthead */
+    .masthead{padding:18px 28px 8px;border-bottom:6px solid #111;position:relative;z-index:5;background:#fff5e0}
+    .masthead-row1{display:flex;justify-content:space-between;align-items:flex-end;font-family:'JetBrains Mono',monospace;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.18em;margin-bottom:4px}
+    .title{font-family:'Bebas Neue',Inter,sans-serif;font-size:96px;letter-spacing:-.01em;line-height:.85;color:#111;margin-top:4px}
+    .title em{font-style:italic;color:#ff3030;font-family:Fraunces,serif;font-weight:900;font-variation-settings:"opsz" 144}
+    .masthead-row2{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.16em}
+    .price{color:#ff3030;font-weight:700}
+    /* Cover photo + cover lines */
+    .cover-body{position:relative;flex:1;display:grid;grid-template-columns:60% 40%;gap:0}
+    .photo-area{position:relative;overflow:hidden;background:#222;height:100%}
+    .photo-area::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.5) 100%);z-index:2}
+    .photo-area img{width:100%;height:100%;object-fit:cover;filter:contrast(1.1) saturate(1.2);transform:scale(1.02)}
+    .photo-overlay{position:absolute;left:0;right:0;bottom:18px;padding:0 24px;z-index:3;color:#fff5e0}
+    .feature-name{font-family:'Bebas Neue',Inter,sans-serif;font-size:78px;letter-spacing:-.01em;line-height:.85;text-shadow:0 4px 16px rgba(0,0,0,.6)}
+    .feature-sub{font-family:Fraunces,serif;font-style:italic;font-size:18px;color:#fff5e0;margin-top:6px;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+    /* Cover lines column */
+    .lines{padding:24px;display:flex;flex-direction:column;gap:16px;background:linear-gradient(180deg,#fff5e0,#f0e0c0);height:100%;justify-content:space-between}
+    .cover-line{padding-left:14px;border-left:4px solid #ff3030}
+    .cover-line .kicker{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:#ff3030;font-weight:700;margin-bottom:4px}
+    .cover-line h2{font-family:Fraunces,serif;font-style:italic;font-weight:900;font-size:24px;letter-spacing:-.02em;line-height:1.05;color:#111;margin-bottom:6px;font-variation-settings:"opsz" 24}
+    .cover-line p{font-family:Inter,sans-serif;font-size:11.5px;line-height:1.45;color:#444}
+    .cover-line p strong{color:#111}
+    .big-feature{padding-left:14px;border-left:4px solid #111;background:#111;color:#fff5e0;padding:18px 18px 18px 22px;border-radius:0;border-left:0}
+    .big-feature .kicker{color:#ffb000}
+    .big-feature h2{color:#fff5e0;font-size:32px;line-height:1}
+    .big-feature p{color:#ddd}
+    /* Footer band */
+    .barband{display:grid;grid-template-columns:1fr auto;align-items:center;padding:14px 24px;background:#111;color:#fff5e0;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+    .barcode{display:flex;align-items:flex-end;height:40px;gap:1px}
+    .barcode i{display:block;background:#fff5e0;width:2px}
+    .barcode i:nth-child(2n){width:1px;height:80%}
+    .barcode i:nth-child(3n){height:60%}
+    .barcode i:nth-child(7n){width:3px}
+    /* Stats sidebar inside the masthead */
+    .quickstats{position:absolute;top:140px;right:24px;background:#111;color:#fff5e0;padding:12px 14px;border-radius:0;z-index:6;display:none}
+    /* Description below */
+    .desc{margin-top:32px;text-align:center;color:#aaa;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;max-width:560px}
+    .desc strong{color:#ff3030;font-weight:700}
+    .cta{margin-top:20px;display:flex;gap:10px;justify-content:center}
+    .cta a{padding:14px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:#ff3030;color:#fff;text-decoration:none}
+    .cta a:hover{background:#fff;color:#ff3030;outline:1px solid #ff3030}
+    .cta a.outline{background:transparent;color:#fff;outline:1px solid #fff}
+    .cta a.outline:hover{background:#fff;color:#111}
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <span>v5 · MAGAZINE · 5/7</span>
+    <a href="/prototypes/">← back to gallery</a>
+  </div>
+
+  <article class="cover">
+    <header class="masthead">
+      <div class="masthead-row1">
+        <span>ISSUE NO. 09 · OPEN-SOURCE EDITION</span>
+        <span>devprint.dev</span>
+      </div>
+      <h1 class="title">DEV<em>PRINT</em></h1>
+      <div class="masthead-row2">
+        <span>May 2026</span>
+        <span>The living CV magazine</span>
+        <span class="price">£0.00 / Free</span>
+      </div>
+    </header>
+
+    <div class="cover-body">
+      <div class="photo-area">
+        <img src="https://avatars.githubusercontent.com/u/170270?v=4" alt="" />
+        <div class="photo-overlay">
+          <div class="feature-name">SINDRE<br>SORHUS</div>
+          <div class="feature-sub">"I just keep shipping" — 1,134 public repos &amp; counting</div>
+        </div>
+      </div>
+
+      <aside class="lines">
+        <div class="cover-line big-feature">
+          <div class="kicker">★ Cover Story ★</div>
+          <h2>The Tools Maker</h2>
+          <p>How a quiet stockholm dev built <strong>842,530 stars</strong> worth of tiny utilities — and accidentally became npm royalty. <em>Pages 4–11.</em></p>
+        </div>
+
+        <div class="cover-line">
+          <div class="kicker">Career</div>
+          <h2>Twenty-three years in.</h2>
+          <p>Career timeline, <strong>"awesome" origins</strong>, and what comes after the type-fest universe.</p>
+        </div>
+
+        <div class="cover-line">
+          <div class="kicker">Stack</div>
+          <h2>JavaScript still wins.</h2>
+          <p>Why the portfolio still leans <strong>56% JS</strong>. Plus a Swift detour that surprised everyone.</p>
+        </div>
+
+        <div class="cover-line">
+          <div class="kicker">Receipts</div>
+          <h2>Battle Card · Legendary.</h2>
+          <p><strong>Build 99 · Impact 99 · Community 99</strong>. Formulas inside — no buzzword bingo, every number derived from public data.</p>
+        </div>
+
+        <div class="cover-line">
+          <div class="kicker">Inside</div>
+          <h2>Often building with…</h2>
+          <p>The eight collaborators you should already know: <strong>@lpinca, @gaearon, @kevva</strong>, and the rest.</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="barband">
+      <span>SUBSCRIBE · DEVPRINT.DEV/&lt;YOUR-USERNAME&gt; · NEW ISSUE EVERY PUSH</span>
+      <span class="barcode">
+        <i style="height:100%"></i><i></i><i></i><i style="height:100%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:100%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:100%"></i><i></i><i style="height:100%"></i><i></i><i></i><i style="height:100%"></i><i></i><i style="height:100%"></i>
+      </span>
+    </footer>
+  </article>
+
+  <p class="desc">Every dev becomes <strong>this issue's cover star</strong>. Headline cover lines auto-generate from the same data Devprint already extracts (top repo → cover story, top language → "stack" line, battle card → "receipts" line). It's a magazine that publishes a new issue every time you push.<br>The viral move: tweet "I'm on the cover" with a screenshot.</p>
+
+  <div class="cta">
+    <a href="#">↗ Share cover</a>
+    <a class="outline" href="#">Print issue</a>
+  </div>
+</body>
+</html>
