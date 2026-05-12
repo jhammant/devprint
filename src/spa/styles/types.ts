@@ -145,6 +145,15 @@ export async function saveAsPng(
       backgroundColor: background,
       cacheBust: true,
       style: { transform: 'none' },
+      // Drop the interactive toolbar from the export. Every style names its
+      // CTA bar `<id>-cta` (lh-cta, hf-cta, ar-cta, …) or `<id>-share`
+      // (np-share). Future styles can opt in with data-export-hide="true".
+      filter: (n) => {
+        if (!(n instanceof HTMLElement)) return true;
+        if (n.dataset.exportHide === 'true') return false;
+        for (const c of n.classList) if (/^[a-z]{2,3}-(cta|share)$/.test(c)) return false;
+        return true;
+      },
     });
     const a = document.createElement('a');
     a.href = dataUrl;
