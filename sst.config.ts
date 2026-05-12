@@ -18,7 +18,7 @@ export default $config({
 
     const agent = new sst.aws.Function('Agent', {
       handler: 'infra/lambdas/agent/index.handler',
-      url: true,
+      url: { cors: false },
       memory: '512 MB',
       timeout: '10 seconds',
       link: [githubToken],
