@@ -84,3 +84,78 @@ export function notImplemented(feature: string): HandlerResponse {
     body: `# Not yet implemented\n\n\`${feature}\` ships in a later wave. See IDEAS.md.\n`,
   };
 }
+
+/**
+ * Friendly default response for `https://agents.devprint.dev/` (no path).
+ *
+ * Returns 200 + a markdown user manual aimed at LLM coding agents:
+ * what the endpoint is, what shape each route returns, and a
+ * copy-pasteable example for the most useful call. Crawlers and humans
+ * landing on the bare host get the same doc.
+ */
+export function agentInstructions(): HandlerResponse {
+  const body = [
+    '# Devprint agent endpoint',
+    '',
+    'You are looking at `https://agents.devprint.dev/` — a read-only API that turns any public GitHub user or repo into a compact, agent-friendly markdown brief.',
+    '',
+    'Pass a target as the path. Every route returns `text/markdown; charset=utf-8` (except where noted) with cache-friendly headers. No auth required. No POST, only GET.',
+    '',
+    '## Quick start',
+    '',
+    'For a user fingerprint:',
+    '',
+    '```',
+    'GET https://agents.devprint.dev/jhammant',
+    '```',
+    '',
+    'For a repo brief (this is the most useful call for an agent picking up an unfamiliar codebase):',
+    '',
+    '```',
+    'GET https://agents.devprint.dev/jhammant/devprint',
+    '```',
+    '',
+    '## All routes',
+    '',
+    '| Path | What you get |',
+    '|---|---|',
+    '| `/:user` | User pack — languages, recent activity, signature repos, build style |',
+    '| `/:user/:repo` | Repo pack — README summary, stack, hot files, CI hints |',
+    '| `/:user/:repo/agents` | Repo pack pre-shaped for agent consumption (same data, different framing) |',
+    '| `/:user/:repo/safety` | Safety + provenance for the repo (license, last-touched, contributor count) |',
+    '| `/:user/:repo/receipt` | Career-receipt pack — who did what, when, how often |',
+    '| `/:user/:repo/drift?sha=<commit>` | JSON: how far the repo has moved since `<commit>` |',
+    '| `/:user/insights.json` | User-level structured JSON insights |',
+    '| `/:user/:repo/insights.json` | Repo-level structured JSON insights |',
+    '| `/:user/resume.json` | JSON Resume schema derived from public activity |',
+    '',
+    'Task overlays (focused framing for the same data) — append `?task=<name>` on user or repo routes:',
+    '`hire`, `pair`, `audit`, `port`, `learn`.',
+    '',
+    '## Headers worth knowing',
+    '',
+    '- `X-Devprint-Target` — the canonical target the response describes',
+    '- `X-Devprint-Kind` — pack kind (`user` / `repo` / `safety` / `receipt` / etc.)',
+    '- `X-Devprint-Redactions` — count of fields scrubbed for privacy',
+    '- `Cache-Control: public, max-age=300, stale-while-revalidate=600`',
+    '',
+    '## Opt-out',
+    '',
+    'Owners can opt out by committing `.well-known/devprint-optout` to any repo they own; the endpoint then returns `451`.',
+    '',
+    '## More',
+    '',
+    'Web UI + source: https://devprint.dev/  ·  https://github.com/jhammant/devprint',
+    '',
+  ].join('\n');
+  return {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/markdown; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=3600',
+      'X-Devprint-Kind': 'instructions',
+    },
+    body,
+  };
+}

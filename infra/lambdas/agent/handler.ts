@@ -20,6 +20,7 @@ import {
 } from '../../../src/analysis/index.ts';
 import type { HandlerRequest, HandlerResponse } from '../../shared/types.ts';
 import {
+  agentInstructions,
   badGateway,
   badRequest,
   markdown,
@@ -40,9 +41,12 @@ export async function handle(
 ): Promise<HandlerResponse> {
   const parsed = parseAgentPath(req.path, req.search);
   if (!parsed.ok) {
-    return parsed.reason === 'empty'
-      ? badRequest('Provide a target, e.g. /jhammant.md or /jhammant/factcheck.md')
-      : badRequest(`Could not parse path: ${req.path}`);
+    if (parsed.reason === 'empty') {
+      // No target → return the agent-readable user manual instead of a 400.
+      // Crawlers, agents probing the root, and curious humans all land here.
+      return agentInstructions();
+    }
+    return badRequest(`Could not parse path: ${req.path}`);
   }
   const route = parsed.route;
   const packOpts: PackOptions = { toolVersion: deps.toolVersion };

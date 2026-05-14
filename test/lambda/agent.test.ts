@@ -106,12 +106,15 @@ describe('agent handler', () => {
     expect(res.status).toBe(502);
   });
 
-  it('returns 400 for empty path', async () => {
+  it('returns 200 agent instructions for empty path', async () => {
     const res = await handle(
       { method: 'GET', path: '/', search: '', headers: {} },
       { client: client(), toolVersion: '0.1.0' },
     );
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    expect(res.headers['X-Devprint-Kind']).toBe('instructions');
+    expect(res.body).toContain('Devprint agent endpoint');
+    expect(res.body).toContain('GET https://agents.devprint.dev/');
   });
 
   it('returns safety.md as text/markdown', async () => {
