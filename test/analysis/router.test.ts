@@ -97,6 +97,27 @@ describe('parseAgentPath', () => {
     }
   });
 
+  it('parses bare /<u> as user pack (extension-less)', () => {
+    const r = parseAgentPath('/jhammant');
+    expect(r.ok).toBe(true);
+    if (r.ok && r.route.kind === 'user') {
+      expect(r.route.user).toBe('jhammant');
+    } else {
+      throw new Error(`expected user, got ${r.ok ? r.route.kind : r.reason}`);
+    }
+  });
+
+  it('parses bare /<u>/<r> as repo pack (extension-less)', () => {
+    const r = parseAgentPath('/jhammant/factcheck');
+    expect(r.ok).toBe(true);
+    if (r.ok && r.route.kind === 'repo') {
+      expect(r.route.user).toBe('jhammant');
+      expect(r.route.repo).toBe('factcheck');
+    } else {
+      throw new Error(`expected repo, got ${r.ok ? r.route.kind : r.reason}`);
+    }
+  });
+
   it('parses /<u>.resume.json as user-resume (priority over user-insights)', () => {
     const r = parseAgentPath('/jhammant.resume.json');
     expect(r.ok).toBe(true);

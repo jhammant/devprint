@@ -67,6 +67,16 @@ export function parseAgentPath(rawPath: string, search?: string): ParseResult {
   const userMatch = /^([^/]+)\.md$/.exec(path);
   if (userMatch) return ok({ kind: 'user', format: 'md', user: userMatch[1], task });
 
+  // Extension-less fallbacks — agents.devprint.dev/<u>/<r> and /<u> should
+  // serve the markdown pack, matching the URLs the README advertises.
+  // These come LAST so all suffixed forms (.md/.json/AGENTS.md/safety.md/
+  // receipt.md/drift) win first.
+  const bareRepoMatch = /^([^/]+)\/([^/]+)$/.exec(path);
+  if (bareRepoMatch) return ok({ kind: 'repo', format: 'md', user: bareRepoMatch[1], repo: bareRepoMatch[2], task });
+
+  const bareUserMatch = /^([^/]+)$/.exec(path);
+  if (bareUserMatch) return ok({ kind: 'user', format: 'md', user: bareUserMatch[1], task });
+
   return { ok: false, reason: 'invalid' };
 }
 
