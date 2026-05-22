@@ -48,7 +48,8 @@ export type StyleId =
   | 'vinyl'
   | 'magazine'
   | 'arcade'
-  | 'subway';
+  | 'subway'
+  | 'recruiter';
 
 export type StyleRenderer = {
   id: StyleId;

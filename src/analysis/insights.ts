@@ -8,9 +8,19 @@
 import type { GhClient } from './github.ts';
 import { packageFileCandidates } from './github.ts';
 import { detectStack, mergeStacks, type StackInference } from './stack.ts';
-import { inferCommitStyle, type CommitStyleVerdict } from './commits.ts';
+import {
+  inferCommitStyle,
+  inferCommitSubstance,
+  fetchCommitDiffs,
+  detectAiTrailers,
+  DIFF_SAMPLE_PER_REPO,
+  type Commit,
+  type CommitDiffStat,
+  type CommitStyleVerdict,
+  type CommitSubstance,
+} from './commits.ts';
 import { buildCareerTimeline, type CareerTimeline } from './timeline.ts';
-import { scoreRepo } from './infer.ts';
+import { scoreRepo, inferSeniority, type Seniority } from './infer.ts';
 import { scrub } from './scrub.ts';
 import type { GhContributor, GhRepo, RepoFile } from './types.ts';
 
@@ -121,6 +131,18 @@ export type Insights = {
   perRepoStack?: Array<{ repo: string; stack: StackInference }>;
   commitStyle?: CommitStyleVerdict;
   /**
+   * Spam-commit / substance verdict — "are recent commits substantial or
+   * trivial edits?". User insights only; absent when commit history is thin.
+   */
+  commitSubstance?: CommitSubstance;
+  /**
+   * Detected AI-coding-tool usage (commit co-author trailers, AI config
+   * files). Presented neutrally. Absent when no signals are found.
+   */
+  aiUsage?: AiUsage;
+  /** Signals-based seniority estimate for the recruiter view. User insights only. */
+  seniority?: Seniority;
+  /**
    * 52 weeks of commit counts (oldest first). For user insights this is the
    * sum across top-3 repos (a "personal pulse"); for repo insights it's the
    * single repo. Undefined when GitHub's cache hasn't built it yet.
@@ -180,6 +202,19 @@ export type ProvenanceBadge = {
   detail: string;
   /** Brand colour bucket the renderer maps to a hue. */
   tone: 'positive' | 'neutral' | 'milestone';
+};
+
+/**
+ * Detected AI-coding-tool usage. Stated as a neutral fact with evidence —
+ * `detected: false` means "no signals found in public data", never "no AI used".
+ */
+export type AiUsage = {
+  detected: boolean;
+  confidence: 'high' | 'medium' | 'low';
+  /** Distinct tool names, e.g. ['Claude Code', 'Cursor']. */
+  tools: string[];
+  /** Human-readable evidence lines. */
+  signals: string[];
 };
 
 export type BuildInsightsOptions = {
@@ -244,6 +279,38 @@ export async function buildUserInsights(
     externalContribs,
   });
 
+  // Recruiter-view signals — commit substance, AI-tool usage, seniority band.
+  // All best-effort: a failure leaves the field undefined, never an error.
+  const topForCommits = top.slice(0, TOP_REPOS_DEFAULT);
+  const commitAnalysis = await analyzeUserCommits(client, topForCommits).catch(() => undefined);
+  const aiConfig = await detectAiConfigFiles(client, topForCommits).catch(() => ({
+    tools: [],
+    files: [],
+  }));
+  const commitSubstance = commitAnalysis?.commitSubstance;
+  const aiUsage = buildAiUsage(
+    {
+      aiTools: commitAnalysis?.aiTools ?? [],
+      reposWithAiTrailers: commitAnalysis?.reposWithAiTrailers ?? 0,
+    },
+    aiConfig,
+  );
+  const mostRecentPush = repos
+    .map((r) => new Date(r.pushed_at ?? r.updated_at).getTime())
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => b - a)[0];
+  const recentlyActive = !!mostRecentPush && Date.now() - mostRecentPush < 30 * 86_400_000;
+  const seniority = inferSeniority({
+    yearsActive: timeline.yearsActive,
+    reposOver100Stars: repos.filter((r) => r.stargazers_count >= 100).length,
+    peakStars: repos[0]?.stargazers_count ?? 0,
+    externalOrgs: externalContribs.length,
+    followers: profile?.followers ?? 0,
+    collaborators: relatedProfiles.length,
+    substantialCommits: commitSubstance?.verdict === 'substantial',
+    recentlyActive,
+  });
+
   return {
     target: user,
     kind: 'user',
@@ -258,6 +325,9 @@ export async function buildUserInsights(
     ...(timeline.milestones.length ? { timeline } : {}),
     ...(externalContribs.length ? { externalContribs } : {}),
     ...(provenanceBadges.length ? { provenanceBadges } : {}),
+    ...(commitSubstance ? { commitSubstance } : {}),
+    ...(aiUsage.detected ? { aiUsage } : {}),
+    seniority,
   };
 }
 
@@ -699,5 +769,118 @@ function deriveProvenanceBadges(input: {
   return out.slice(0, 5);
 }
 
+// ---- commit substance / AI usage / seniority helpers ---------------------
+
+/** AI-tool config files to probe for, mapped to the tool they indicate. */
+const AI_CONFIG_FILES: ReadonlyArray<{ path: string; tool: string }> = [
+  { path: 'CLAUDE.md', tool: 'Claude Code' },
+  { path: '.cursorrules', tool: 'Cursor' },
+  { path: '.cursor/rules', tool: 'Cursor' },
+  { path: '.github/copilot-instructions.md', tool: 'GitHub Copilot' },
+  { path: '.windsurfrules', tool: 'Windsurf' },
+  { path: '.aider.conf.yml', tool: 'aider' },
+  { path: 'AGENTS.md', tool: 'AI coding agents' },
+  { path: '.clinerules', tool: 'Cline' },
+];
+
+/**
+ * Pull recent commits across the top repos, sample diff stats (hard-capped),
+ * and derive the commit-substance verdict plus AI co-author trailer signals.
+ * One shared commit fetch feeds both. Always resolves — never throws.
+ */
+async function analyzeUserCommits(
+  client: GhClient,
+  repos: readonly GhRepo[],
+): Promise<{ commitSubstance: CommitSubstance; aiTools: string[]; reposWithAiTrailers: number }> {
+  const perRepo = await Promise.all(
+    repos.map(async (r) => {
+      const owner = r.full_name.split('/')[0];
+      try {
+        const commits = await client.getRecentCommits(
+          owner,
+          r.name,
+          undefined,
+          DIFF_SAMPLE_PER_REPO * 2,
+        );
+        const diffs = await fetchCommitDiffs(client, owner, r.name, commits);
+        return { commits, diffs };
+      } catch {
+        return { commits: [] as Commit[], diffs: new Map<string, CommitDiffStat>() };
+      }
+    }),
+  );
+
+  const allCommits = perRepo.flatMap((p) => p.commits);
+  const allDiffs = new Map<string, CommitDiffStat>();
+  for (const p of perRepo) for (const [k, v] of p.diffs) allDiffs.set(k, v);
+
+  const aiTools = new Set<string>();
+  let reposWithAiTrailers = 0;
+  for (const p of perRepo) {
+    const hit = detectAiTrailers(p.commits.map((c) => c.message));
+    if (hit.hits > 0) {
+      reposWithAiTrailers++;
+      for (const t of hit.tools) aiTools.add(t);
+    }
+  }
+
+  return {
+    commitSubstance: inferCommitSubstance(allCommits, allDiffs),
+    aiTools: Array.from(aiTools),
+    reposWithAiTrailers,
+  };
+}
+
+/** Probe the top repos for AI-tool config files. Best-effort; never throws. */
+async function detectAiConfigFiles(
+  client: GhClient,
+  repos: readonly GhRepo[],
+): Promise<{ tools: string[]; files: string[] }> {
+  const tools = new Set<string>();
+  const files = new Set<string>();
+  await Promise.all(
+    repos.map(async (r) => {
+      const owner = r.full_name.split('/')[0];
+      const settled = await Promise.allSettled(
+        AI_CONFIG_FILES.map((cfg) => client.getRepoFile(owner, r.name, cfg.path)),
+      );
+      settled.forEach((s, i) => {
+        if (s.status === 'fulfilled' && s.value?.content) {
+          tools.add(AI_CONFIG_FILES[i].tool);
+          files.add(AI_CONFIG_FILES[i].path);
+        }
+      });
+    }),
+  );
+  return { tools: Array.from(tools), files: Array.from(files) };
+}
+
+/** Combine commit-trailer and config-file evidence into a neutral AiUsage. */
+function buildAiUsage(
+  commitPart: { aiTools: string[]; reposWithAiTrailers: number },
+  configPart: { tools: string[]; files: string[] },
+): AiUsage {
+  const tools = Array.from(new Set([...commitPart.aiTools, ...configPart.tools]));
+  const signals: string[] = [];
+  if (commitPart.reposWithAiTrailers > 0) {
+    signals.push(
+      `Commit co-author trailers in ${commitPart.reposWithAiTrailers} repo${commitPart.reposWithAiTrailers === 1 ? '' : 's'}`,
+    );
+  }
+  for (const f of configPart.files) signals.push(`${f} present`);
+
+  const detected = signals.length > 0;
+  const confidence: AiUsage['confidence'] =
+    commitPart.reposWithAiTrailers > 0
+      ? 'high'
+      : configPart.files.length >= 2
+        ? 'medium'
+        : 'low';
+
+  return { detected, confidence, tools, signals };
+}
+
 // Re-export for SPA-side typing convenience.
 export type { GhRepo };
+export type { CommitSubstance } from './commits.ts';
+export type { Seniority } from './infer.ts';

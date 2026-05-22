@@ -47,7 +47,7 @@ export default $config({
       ...(isProd && {
         domain: {
           name: 'devprint.dev',
-          aliases: ['www.devprint.dev'],
+          aliases: ['www.devprint.dev', 'recruiter.devprint.dev'],
         },
       }),
     });

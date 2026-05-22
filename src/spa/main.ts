@@ -27,12 +27,20 @@ import type { ProfileData } from './styles/index.ts';
 // from our agent endpoint, which uses a server-side token.
 const client = createGitHubClient({ userAgent: 'Devprint-SPA/0.1' });
 
+// recruiter.devprint.dev is a delivery wrapper: same SPA, but the recruiter
+// style is forced and the style picker is hidden. The `?recruiter=1` query
+// flag is a local-dev escape hatch (the subdomain won't resolve on localhost).
+const RECRUITER_HOST =
+  location.hostname === 'recruiter.devprint.dev' ||
+  new URLSearchParams(location.search).get('recruiter') === '1';
+
 const AGENT_ORIGIN =
-  // In prod, agents.devprint.dev is a different host. Locally / on the dev
-  // CloudFront, fall back to "/agents-pack/<target>.md" via Lambda Function
-  // URL — but for now we only run prod with the dual-host setup, so just use
-  // the canonical agent host.
-  location.hostname === 'devprint.dev' || location.hostname === 'www.devprint.dev'
+  // In prod, agents.devprint.dev is a different host. The recruiter subdomain
+  // shares the SPA bundle but must still reach the canonical agent host for
+  // pack/insights JSON. Locally we fall back to a same-origin path.
+  location.hostname === 'devprint.dev' ||
+  location.hostname === 'www.devprint.dev' ||
+  location.hostname === 'recruiter.devprint.dev'
     ? 'https://agents.devprint.dev'
     : '';
 
@@ -183,9 +191,10 @@ async function build(raw: string, scroll = true) {
     // there. Pass `?style=default` (or `?style=dashboard`) to opt back into
     // the original full-dashboard layout.
     const rawStyleId = new URLSearchParams(location.search).get('style');
-    const styleId = rawStyleId ?? 'letterhead';
+    // recruiter.devprint.dev forces the recruiter style regardless of ?style=.
+    const styleId = RECRUITER_HOST ? 'recruiter' : (rawStyleId ?? 'letterhead');
     const renderer = currentMode === 'agent' ? null : getStyle(styleId);
-    const styleQuery = rawStyleId ? `?style=${rawStyleId}` : '';
+    const styleQuery = !RECRUITER_HOST && rawStyleId ? `?style=${rawStyleId}` : '';
     history.replaceState(null, '', `${currentMode === 'agent' ? `/agents/${target}` : `/${target}`}${styleQuery}`);
     // Per-render hit so the analytics dashboard sees which profiles + styles
     // are getting traffic, not just landing-page visits. Path keeps the
@@ -899,10 +908,13 @@ function mountStyle(renderer: import('./styles/index.ts').StyleRenderer, data: P
   host.style.opacity = '';
   host.style.transition = '';
   const out = renderer.render(data);
-  host.innerHTML = out.html + renderStylePicker(renderer.id, lastTarget || data.target, currentMode);
+  // The recruiter subdomain is a focused product — hide the novelty-style picker.
+  host.innerHTML =
+    out.html +
+    (RECRUITER_HOST ? '' : renderStylePicker(renderer.id, lastTarget || data.target, currentMode));
   const ret = out.mount?.(host);
   lastStyleUnmount = typeof ret === 'function' ? ret : null;
-  wireStylePicker(host, lastTarget || data.target, currentMode);
+  if (!RECRUITER_HOST) wireStylePicker(host, lastTarget || data.target, currentMode);
 }
 
 /**
@@ -1357,6 +1369,17 @@ $('nativeShare').onclick = async () => {
 $('humanMode').onclick = () => setMode('human');
 $('agentMode').onclick = () => setMode('agent');
 setMode(currentMode);
+
+// recruiter.devprint.dev — recruiter-flavoured landing on the bare root.
+if (RECRUITER_HOST) {
+  $('brandText').textContent = 'Devprint · Recruiter';
+  $('eyebrow').textContent = 'github username in → hiring signals out';
+  $('heroTitle').textContent = 'Judge a developer on hard-to-fake signals.';
+  $('heroLead').textContent =
+    'Paste a GitHub username. Devprint surfaces verified provenance signals, a seniority read, and AI-tool usage — and tells you plainly what public data can’t show.';
+  $('agentMode').style.display = 'none';
+  $('humanMode').style.display = 'none';
+}
 
 const initial = pathTarget() || cleanTarget(location.hash.slice(1));
 if (initial) build(initial, false);

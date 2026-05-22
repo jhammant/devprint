@@ -133,6 +133,103 @@ export function archetype(
   return winner;
 }
 
+// ---- Seniority -----------------------------------------------------------
+
+/**
+ * A signals-based seniority estimate for the recruiter view. Deliberately a
+ * coarse band, never a numeric score — public GitHub under-represents senior
+ * engineers with mostly private/work code, so the band is an estimate, framed
+ * as such in the UI. Takes primitive inputs (not the Insights object) to keep
+ * this module free of circular dependencies.
+ */
+export type Seniority = {
+  band: 'junior' | 'mid' | 'senior' | 'staff+';
+  /** 1–3 evidence lines shown beneath the band. */
+  basis: string[];
+};
+
+export type SeniorityInput = {
+  /** Years building publicly (timeline.yearsActive). */
+  yearsActive?: number;
+  /** Count of non-fork repos with ≥100 stars. */
+  reposOver100Stars: number;
+  /** Stars on the most-starred repo. */
+  peakStars: number;
+  /** Distinct external orgs the user has merged PRs into. */
+  externalOrgs: number;
+  /** Profile followers. */
+  followers: number;
+  /** Distinct recurring collaborators. */
+  collaborators: number;
+  /** Whether recent commits read as substantial (commitSubstance verdict). */
+  substantialCommits: boolean;
+  /** Whether a public repo was pushed within the last ~30 days. */
+  recentlyActive: boolean;
+};
+
+const BAND_LABEL: Record<Seniority['band'], string> = {
+  junior: 'Junior',
+  mid: 'Mid',
+  senior: 'Senior',
+  'staff+': 'Staff+',
+};
+
+export function seniorityLabel(band: Seniority['band']): string {
+  return BAND_LABEL[band];
+}
+
+export function inferSeniority(input: SeniorityInput): Seniority {
+  const bucket = (v: number, thresholds: readonly [number, number, number]): number =>
+    v >= thresholds[2] ? 3 : v >= thresholds[1] ? 2 : v >= thresholds[0] ? 1 : 0;
+
+  const years = input.yearsActive ?? 0;
+  const yearsPts = bucket(years, [3, 5, 8]);
+  const reachPts = bucket(input.reposOver100Stars, [1, 2, 3]);
+  const peakPts = bucket(input.peakStars, [100, 1_000, 5_000]);
+  const externalPts = bucket(input.externalOrgs, [1, 3, 5]);
+  const followerPts = bucket(input.followers, [50, 500, 2_000]);
+  const collabPts = Math.min(2, bucket(input.collaborators, [2, 5, 12]));
+  const substancePts = input.substantialCommits ? 1 : 0;
+
+  const total =
+    yearsPts + reachPts + peakPts + externalPts + followerPts + collabPts + substancePts;
+
+  let band: Seniority['band'] =
+    total >= 12 ? 'staff+' : total >= 7 ? 'senior' : total >= 3 ? 'mid' : 'junior';
+
+  // Don't award senior/staff+ on passive signals alone. Stars and account age
+  // accumulate without recent or earned work (e.g. tutorial repos that everyone
+  // forks). The top bands require at least one *active* signal: external merged
+  // PRs, substantial recent commits, or recent public activity.
+  const hasActiveSignal =
+    input.externalOrgs > 0 || input.substantialCommits || input.recentlyActive;
+  const cappedFromPassive = !hasActiveSignal && (band === 'senior' || band === 'staff+');
+  if (cappedFromPassive) band = 'mid';
+
+  const basis: string[] = [];
+  if (years >= 3) basis.push(`${years} years building publicly`);
+  if (input.reposOver100Stars > 0) {
+    basis.push(
+      `maintains ${input.reposOver100Stars} repo${input.reposOver100Stars === 1 ? '' : 's'} over 100★`,
+    );
+  } else if (input.peakStars >= 50) {
+    basis.push(`top repo at ${input.peakStars.toLocaleString()}★`);
+  }
+  if (input.externalOrgs > 0) {
+    basis.push(
+      `merged PRs into ${input.externalOrgs} org${input.externalOrgs === 1 ? '' : 's'} they don't own`,
+    );
+  }
+  if (input.substantialCommits) basis.push('recent commits read as substantial');
+  if (cappedFromPassive) {
+    basis.push('no recent or outside-org activity in public data — not rated above mid on stars alone');
+  }
+  if (basis.length === 0) {
+    basis.push('limited public signal — most evidence may be in private or work repos');
+  }
+  return { band, basis: basis.slice(0, 3) };
+}
+
 // ---- Themes --------------------------------------------------------------
 
 const THEME_KEYWORDS: Record<string, readonly string[]> = {

@@ -9,6 +9,7 @@ import { letterhead } from './letterhead.ts';
 import { magazine } from './magazine.ts';
 import { newspaper } from './newspaper.ts';
 import { receipt } from './receipt.ts';
+import { recruiter } from './recruiter.ts';
 import { subway } from './subway.ts';
 import { tradingCard } from './trading-card.ts';
 import { vinyl } from './vinyl.ts';
@@ -25,6 +26,7 @@ export const STYLES: Record<Exclude<StyleId, 'default'>, StyleRenderer> = {
   magazine,
   arcade,
   subway,
+  recruiter,
 };
 
 export const STYLE_LIST: ReadonlyArray<{ id: StyleId; name: string; blurb: string }> = [

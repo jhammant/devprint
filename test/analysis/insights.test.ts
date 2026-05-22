@@ -119,6 +119,60 @@ describe('buildUserInsights', () => {
     const insights = await buildUserInsights(c, 'jhammant');
     expect(insights.stack.detected.map((d) => d.name)).toContain('Fastify');
   });
+
+  it('computes commitSubstance with diff stats when getCommitDetail is available', async () => {
+    const c = client({
+      getRecentCommits: async () =>
+        Array.from({ length: 10 }, (_, i) => ({ sha: `s${i}`, message: 'work', date: '' })),
+      getCommitDetail: async (_o, _r, sha) => ({ sha, additions: 60, deletions: 12, changedFiles: 4 }),
+    });
+    const insights = await buildUserInsights(c, 'jhammant');
+    expect(insights.commitSubstance?.basis).toBe('diff-sampled');
+    expect(insights.commitSubstance?.verdict).toBe('substantial');
+  });
+
+  it('falls back to message-only commitSubstance without getCommitDetail', async () => {
+    const c = client({
+      getRecentCommits: async () =>
+        Array.from({ length: 8 }, (_, i) => ({
+          sha: `m${i}`,
+          message: 'Add full retry logic to the queue worker',
+          date: '',
+        })),
+    });
+    const insights = await buildUserInsights(c, 'jhammant');
+    expect(insights.commitSubstance?.basis).toBe('message-only');
+  });
+
+  it('detects AI usage from an AI-tool config file', async () => {
+    const c = client({
+      getRepoFile: async (_o, _r, p) =>
+        p === '.cursorrules' ? { path: p, content: 'be concise' } : undefined,
+    });
+    const insights = await buildUserInsights(c, 'jhammant');
+    expect(insights.aiUsage?.detected).toBe(true);
+    expect(insights.aiUsage?.tools).toContain('Cursor');
+  });
+
+  it('always returns a seniority band', async () => {
+    const insights = await buildUserInsights(client(), 'jhammant');
+    expect(insights.seniority?.band).toBeDefined();
+    expect(['junior', 'mid', 'senior', 'staff+']).toContain(insights.seniority!.band);
+  });
+
+  it('survives getRecentCommits throwing for every repo', async () => {
+    const c = client({
+      getRecentCommits: async () => {
+        throw new Error('rate limited');
+      },
+    });
+    const insights = await buildUserInsights(c, 'jhammant');
+    expect(insights.kind).toBe('user');
+    // commitSubstance either omitted or insufficient-data — never throws.
+    if (insights.commitSubstance) {
+      expect(insights.commitSubstance.verdict).toBe('insufficient-data');
+    }
+  });
 });
 
 describe('buildRepoInsights', () => {

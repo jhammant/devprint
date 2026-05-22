@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { archetype, battleStats, getThemes } from '../../src/analysis/infer.ts';
+import { archetype, battleStats, getThemes, inferSeniority } from '../../src/analysis/infer.ts';
 import type { GhRepo, GhUser } from '../../src/analysis/types.ts';
 
 const baseRepo = (over: Partial<GhRepo>): GhRepo => ({
@@ -86,5 +86,83 @@ describe('battleStats', () => {
     expect(b.build.confidence).toBe('high');
     expect(b.build.evidence.length).toBeGreaterThan(0);
     expect(['Emerging', 'Rare', 'Epic', 'Legendary']).toContain(b.tier);
+  });
+});
+
+describe('inferSeniority', () => {
+  it('returns junior for a thin, young profile', () => {
+    const s = inferSeniority({
+      yearsActive: 1,
+      reposOver100Stars: 0,
+      peakStars: 3,
+      externalOrgs: 0,
+      followers: 4,
+      collaborators: 0,
+      substantialCommits: false,
+      recentlyActive: false,
+    });
+    expect(s.band).toBe('junior');
+    expect(s.basis.length).toBeGreaterThan(0);
+  });
+
+  it('returns a high band for a long-arc, high-reach profile', () => {
+    const s = inferSeniority({
+      yearsActive: 10,
+      reposOver100Stars: 5,
+      peakStars: 12_000,
+      externalOrgs: 6,
+      followers: 4_000,
+      collaborators: 15,
+      substantialCommits: true,
+      recentlyActive: true,
+    });
+    expect(['senior', 'staff+']).toContain(s.band);
+    expect(s.basis.join(' ')).toMatch(/years|repo|PRs/);
+  });
+
+  it('cites external contributions in the evidence', () => {
+    const s = inferSeniority({
+      yearsActive: 5,
+      reposOver100Stars: 1,
+      peakStars: 300,
+      externalOrgs: 3,
+      followers: 200,
+      collaborators: 4,
+      substantialCommits: true,
+      recentlyActive: true,
+    });
+    expect(s.basis.some((b) => b.includes("don't own"))).toBe(true);
+  });
+
+  it('caps a star-inflated but inactive profile below senior', () => {
+    // High stars + long history, but zero active signals (no external PRs,
+    // no substantial recent commits, not recently active) — must not read
+    // senior/staff+ on passive signals alone.
+    const s = inferSeniority({
+      yearsActive: 14,
+      reposOver100Stars: 6,
+      peakStars: 12_000,
+      externalOrgs: 0,
+      followers: 4_000,
+      collaborators: 1,
+      substantialCommits: false,
+      recentlyActive: false,
+    });
+    expect(s.band).toBe('mid');
+    expect(s.basis.some((b) => b.includes('stars alone'))).toBe(true);
+  });
+
+  it('keeps a high band when an active signal is present', () => {
+    const s = inferSeniority({
+      yearsActive: 14,
+      reposOver100Stars: 6,
+      peakStars: 12_000,
+      externalOrgs: 0,
+      followers: 4_000,
+      collaborators: 1,
+      substantialCommits: false,
+      recentlyActive: true, // recent activity is enough to qualify
+    });
+    expect(['senior', 'staff+']).toContain(s.band);
   });
 });

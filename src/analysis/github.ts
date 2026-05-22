@@ -34,6 +34,17 @@ export type GhClient = {
     branch?: string,
     count?: number,
   ): Promise<Array<{ sha: string; message: string; author?: string; date: string }>>;
+  /**
+   * Optional: fetch a single commit's diff stats. The commit-LIST endpoint
+   * omits `stats`/`files` — only the single-commit endpoint carries them.
+   * Optional so unauthenticated clients and test fakes need not implement it;
+   * callers degrade to a message-only analysis when it is absent.
+   */
+  getCommitDetail?(
+    owner: string,
+    repo: string,
+    sha: string,
+  ): Promise<{ sha: string; additions: number; deletions: number; changedFiles: number } | undefined>;
   getCommitActivity(
     owner: string,
     repo: string,
@@ -166,6 +177,23 @@ export function createGitHubClient(opts: GhClientOptions = {}): GhClient {
         author: c.author?.login ?? c.commit.author?.name ?? undefined,
         date: c.commit.author?.date ?? '',
       }));
+    },
+    async getCommitDetail(owner, repo, sha) {
+      type GhCommitDetail = {
+        sha: string;
+        stats?: { additions?: number; deletions?: number; total?: number };
+        files?: unknown[];
+      };
+      const d = await getOptional<GhCommitDetail>(
+        `https://api.github.com/repos/${enc(owner)}/${enc(repo)}/commits/${enc(sha)}`,
+      );
+      if (!d) return undefined;
+      return {
+        sha: d.sha,
+        additions: d.stats?.additions ?? 0,
+        deletions: d.stats?.deletions ?? 0,
+        changedFiles: Array.isArray(d.files) ? d.files.length : 0,
+      };
     },
     async getCommitActivity(owner, repo) {
       // /stats/commit_activity returns 52 weeks of weekly counts. The endpoint

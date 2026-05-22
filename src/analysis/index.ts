@@ -45,8 +45,11 @@ export {
   scoreRepo,
   statValue,
   summariseThemes,
+  inferSeniority,
+  seniorityLabel,
   BATTLE_FORMULAS,
 } from './infer.ts';
+export type { Seniority, SeniorityInput } from './infer.ts';
 
 export { buildUserPack, buildRepoPack } from './pack.ts';
 export type { PackOptions } from './pack.ts';
@@ -61,9 +64,21 @@ export type { DetectedTech, StackInference, TechCategory } from './stack.ts';
 
 export {
   fetchRecentCommits,
+  fetchCommitDiffs,
   inferCommitStyle,
+  inferCommitSubstance,
+  detectAiTrailers,
+  DIFF_SAMPLE_PER_REPO,
+  DIFF_SAMPLE_MAX_REPOS,
 } from './commits.ts';
-export type { Commit, CommitStyleSignal, CommitStyleVerdict } from './commits.ts';
+export type {
+  Commit,
+  CommitStyleSignal,
+  CommitStyleVerdict,
+  CommitDiffStat,
+  CommitSubstance,
+  AiTrailerHit,
+} from './commits.ts';
 
 export { buildUserInsights, buildRepoInsights } from './insights.ts';
 export type {
@@ -79,6 +94,7 @@ export type {
   ProfileEndorsement,
   ExternalContribOrg,
   ProvenanceBadge,
+  AiUsage,
 } from './insights.ts';
 export type { CareerTimeline, CareerMilestone, LangYearShare } from './timeline.ts';
 export { buildCareerTimeline } from './timeline.ts';
