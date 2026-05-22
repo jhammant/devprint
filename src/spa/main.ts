@@ -1366,20 +1366,92 @@ $('nativeShare').onclick = async () => {
   await navigator.clipboard.writeText(location.href);
   flash($('nativeShare'), 'Link copied', 'Share');
 };
+/**
+ * Purpose-built landing for the bare root of recruiter.devprint.dev. Replaces
+ * the generic developer-facing hero with a recruitment-focused page: what the
+ * recruiter view answers, an honesty note, and a username search. Re-wires the
+ * search form and example chips since it swaps the hero markup wholesale.
+ */
+function renderRecruiterLanding(): void {
+  const host = document.querySelector<HTMLElement>('.hero > div');
+  if (!host) return;
+  document.body.classList.add('recruiter-host');
+  document.querySelector<HTMLElement>('.pill')?.style.setProperty('display', 'none');
+
+  if (!document.getElementById('rlStyle')) {
+    const st = document.createElement('style');
+    st.id = 'rlStyle';
+    st.textContent = `
+.rl{max-width:780px;margin:0 auto;padding:8px 0 64px;text-align:center}
+.rl-eyebrow{font-size:12px;font-weight:700;letter-spacing:.16em;color:#62f0a7;text-transform:uppercase;margin-bottom:18px}
+.rl-h1{font-size:clamp(32px,5.4vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.06;margin:0 0 16px;color:#fff}
+.rl-sub{font-size:16px;line-height:1.6;color:#9aa5b4;max-width:60ch;margin:0 auto 28px}
+.rl-search{display:flex;gap:8px;max-width:540px;margin:0 auto 14px}
+.rl-input{flex:1;padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:#fff;font-size:15px;font-family:inherit}
+.rl-input::placeholder{color:#6b7585}
+.rl-input:focus{outline:2px solid #4da3ff;outline-offset:0;border-color:#4da3ff}
+.rl-go{padding:14px 22px;border-radius:10px;border:0;background:linear-gradient(135deg,#31d9ff,#7c5cff);color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.rl-examples{font-size:13px;color:#8b949e;margin-bottom:42px}
+.rl-examples .chip{display:inline-block;margin:4px;padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#cdd6e0;cursor:pointer;font-size:13px}
+.rl-examples .chip:hover{background:rgba(255,255,255,.12);color:#fff}
+.rl-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:0 auto 30px;text-align:left}
+.rl-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:18px 20px}
+.rl-card h3{font-size:14px;font-weight:800;color:#fff;margin:0 0 6px}
+.rl-card p{font-size:13px;line-height:1.55;color:#9aa5b4;margin:0}
+.rl-honesty{font-size:13px;line-height:1.65;color:#8b949e;max-width:62ch;margin:0 auto;border-top:1px solid rgba(255,255,255,.08);padding-top:24px}
+.rl-honesty b{color:#cdd6e0}
+.rl-loading{margin-top:16px;color:#8b949e;font-size:13px}
+.rl-error{margin-top:12px;color:#ff6b6b;font-size:13px}
+@media(max-width:620px){.rl-cards{grid-template-columns:1fr}.rl-search{flex-direction:column}}`;
+    document.head.appendChild(st);
+  }
+
+  host.innerHTML = `
+<div class="rl">
+  <div class="rl-eyebrow">For recruiters &amp; hiring teams</div>
+  <h1 class="rl-h1">See what a developer actually builds.</h1>
+  <p class="rl-sub">Enter any GitHub username. Devprint turns public GitHub data into a clear hiring signal — focus, level, real-world contribution and AI-tool usage — and says plainly what it can't tell you. Free, no login.</p>
+  <form class="rl-search" id="form">
+    <input id="target" class="rl-input" placeholder="GitHub username — e.g. torvalds" autocomplete="off" aria-label="GitHub username" />
+    <button id="go" class="rl-go" type="submit">See the signals</button>
+  </form>
+  <div class="rl-examples">Try
+    <span class="chip" data-target="torvalds">torvalds</span>
+    <span class="chip" data-target="sindresorhus">sindresorhus</span>
+    <span class="chip" data-target="gaearon">gaearon</span>
+    <span class="chip" data-target="antirez">antirez</span>
+  </div>
+  <div class="rl-cards">
+    <div class="rl-card"><h3>What they do</h3><p>Their focus, primary stack and the kind of projects they ship — in plain language.</p></div>
+    <div class="rl-card"><h3>How good they are</h3><p>Hard-to-fake signals: merged PRs into other people's repos, maintained projects, substantial commits.</p></div>
+    <div class="rl-card"><h3>Overall level</h3><p>A seniority read — Junior through Staff+ — with the evidence behind the estimate.</p></div>
+    <div class="rl-card"><h3>AI tooling</h3><p>Whether they use AI coding tools, detected from public signals and stated as a neutral fact.</p></div>
+  </div>
+  <p class="rl-honesty"><b>Honest by design.</b> Devprint reads public GitHub output only. It can't show code quality, private or work repositories, or how someone performs in an interview — and every card says so. No black-box score; nothing you can't verify yourself.</p>
+  <div class="rl-loading" id="loading" style="display:none">Building…</div>
+  <div class="rl-error" id="error" style="display:none"></div>
+</div>`;
+
+  document.getElementById('form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    build((document.getElementById('target') as HTMLInputElement).value);
+  });
+  host.querySelectorAll<HTMLElement>('.chip').forEach((c) => {
+    c.onclick = () => build(c.dataset.target || '');
+  });
+}
+
 $('humanMode').onclick = () => setMode('human');
 $('agentMode').onclick = () => setMode('agent');
 setMode(currentMode);
 
-// recruiter.devprint.dev — recruiter-flavoured landing on the bare root.
 if (RECRUITER_HOST) {
   $('brandText').textContent = 'Devprint · Recruiter';
-  $('eyebrow').textContent = 'github username in → hiring signals out';
-  $('heroTitle').textContent = 'Judge a developer on hard-to-fake signals.';
-  $('heroLead').textContent =
-    'Paste a GitHub username. Devprint surfaces verified provenance signals, a seniority read, and AI-tool usage — and tells you plainly what public data can’t show.';
   $('agentMode').style.display = 'none';
   $('humanMode').style.display = 'none';
 }
 
 const initial = pathTarget() || cleanTarget(location.hash.slice(1));
+// Bare root of the recruiter subdomain → the purpose-built recruiter landing.
+if (RECRUITER_HOST && !initial) renderRecruiterLanding();
 if (initial) build(initial, false);
